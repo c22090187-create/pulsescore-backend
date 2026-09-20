@@ -1405,6 +1405,7 @@
       renderScoresPage();
       renderMatchList();
       renderPredictPanel();
+      if (typeof renderHistory === "function") renderHistory();
     }
   }
 
