@@ -1019,8 +1019,27 @@
       <button data-nav="freead"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/></svg><span>자유 광고방</span></button>
       <button data-nav="paidad"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/></svg><span>유료 광고방</span></button>
       <button data-nav="notice"><svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="9" r="4" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="14" r="4" stroke="currentColor" stroke-width="1.8"/></svg><span>공지</span></button>
+      <button class="adminonly-btn" id="more-membersbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>회원 관리</span></button>
       <div style="height:1px;background:var(--line-soft);margin:6px 4px"></div>
       <button id="more-supportbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18h.01M9.5 9a2.5 2.5 0 015 0c0 1.5-1.5 2-2 2.7-.3.4-.5.9-.5 1.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg><span>고객센터 문의</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="membersmodal">
+  <div class="discussmodal" style="max-width:640px">
+    <div class="discuss-head">
+      <div class="discuss-headinfo">
+        <span class="dh-teams">회원 관리</span>
+        <span class="dh-meta" id="members-count-label">불러오는 중...</span>
+      </div>
+      <button class="ghostbtn" id="members-refresh" style="padding:6px 12px;font-size:12px">새로고침</button>
+      <button class="modal-close" id="members-close" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="discuss-list" id="members-body" style="padding:14px 16px">
+      <div class="discuss-empty">불러오는 중...</div>
     </div>
   </div>
 </div>
@@ -1105,6 +1124,25 @@
       </div>
     </div>
     <div class="writemodal-foot"><button id="login-submit" disabled>로그인</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="accountmodal">
+  <div class="writemodal">
+    <div class="writemodal-head"><span>내 계정</span>
+      <button class="modal-close" id="account-close" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="writemodal-body">
+      <div class="write-charcount" style="text-align:left;font-size:12.5px" id="account-email-label">-</div>
+      <input type="text" id="account-nickname-input" placeholder="닉네임" maxlength="20">
+      <div class="write-charcount" style="text-align:left" id="account-status-text">닉네임을 바꾸고 저장을 눌러주세요.</div>
+    </div>
+    <div class="writemodal-foot" style="justify-content:space-between">
+      <button type="button" id="account-logout" style="background:none;border:1px solid var(--line);color:var(--text-dim);font-weight:600;font-size:13px;padding:9px 16px;border-radius:999px">로그아웃</button>
+      <button id="account-save">저장</button>
+    </div>
   </div>
 </div>
 
@@ -1378,9 +1416,18 @@
   // ---------- ADMIN MODE (배너 관리 등 관리자 전용 기능 노출 제어) ----------
   let isAdmin = false;
   try{ isAdmin = localStorage.getItem("pulsescore_admin") === "1"; }catch(e){ isAdmin = false; }
+  window.psAdminSecret = null;
+  try{ window.psAdminSecret = sessionStorage.getItem("pulsescore_admin_secret") || null; }catch(e){}
+  // localStorage만으로 관리자 UI가 열려도, 실제 회원 관리 API는 아래 psAdminSecret이
+  // 없으면 401로 막히므로 안전합니다(브라우저에서 isAdmin을 강제로 true로 바꿔도 소용없음).
+  if(isAdmin && !window.psAdminSecret){
+    // 세션이 끊긴 상태(비밀번호를 다시 검증해야 함) — UI만 관리자 모드로 보이되
+    // 회원 관리 기능을 열면 재로그인을 요청하게 됩니다.
+  }
   function applyAdminUI(){
     document.getElementById("bannertoggle").classList.toggle("show-admin", isAdmin);
     document.getElementById("paidad-writebtn").classList.toggle("show-admin", isAdmin);
+    document.getElementById("more-membersbtn").classList.toggle("show-admin", isAdmin);
     document.getElementById("avatarbtn").classList.toggle("admin-on", isAdmin);
     document.getElementById("avatarbtn").textContent = isAdmin ? "AD" : "PS";
     if(!isAdmin){
@@ -2699,7 +2746,62 @@
     }
   }
 
+  // ---- 회원 로그인 버튼 상태 (로그인 전/후 표시 전환) ----
+  function memberDisplayName(user){
+    if(!user) return "";
+    return (user.user_metadata && user.user_metadata.nickname) || (user.email ? user.email.split("@")[0] : "회원");
+  }
+  function applyMemberUI(){
+    const btn = document.getElementById("loginbtn");
+    if(window.psCurrentUser){
+      btn.textContent = memberDisplayName(window.psCurrentUser);
+    } else {
+      btn.textContent = "회원 로그인";
+    }
+  }
+  function openAccountModal(){
+    if(!window.psCurrentUser) return;
+    document.getElementById("account-email-label").textContent = window.psCurrentUser.email || "";
+    document.getElementById("account-nickname-input").value = memberDisplayName(window.psCurrentUser);
+    document.getElementById("account-status-text").textContent = "닉네임을 바꾸고 저장을 눌러주세요.";
+    document.getElementById("accountmodal").classList.add("show");
+  }
+  document.getElementById("account-close").addEventListener("click", () => document.getElementById("accountmodal").classList.remove("show"));
+  document.getElementById("accountmodal").addEventListener("click", (e) => { if(e.target.id === "accountmodal") document.getElementById("accountmodal").classList.remove("show"); });
+  document.getElementById("account-save").addEventListener("click", async () => {
+    const nickname = document.getElementById("account-nickname-input").value.trim();
+    if(!nickname){ showToast("닉네임을 입력해주세요"); return; }
+    if(!window.psSupabase){ showToast("Supabase 연동이 준비되지 않았습니다"); return; }
+    const btn = document.getElementById("account-save");
+    btn.disabled = true;
+    try{
+      const { data, error } = await window.psSupabase.auth.updateUser({ data: { nickname } });
+      if(error) throw error;
+      window.psCurrentUser = data.user || window.psCurrentUser;
+      applyMemberUI();
+      showToast("닉네임을 저장했습니다");
+      document.getElementById("accountmodal").classList.remove("show");
+    }catch(err){
+      showToast(err.message || "저장하지 못했습니다");
+    }finally{
+      btn.disabled = false;
+    }
+  });
+  document.getElementById("account-logout").addEventListener("click", async () => {
+    try{
+      if(window.psSupabase) await window.psSupabase.auth.signOut();
+    }catch(err){ /* ignore */ }
+    window.psCurrentUser = null;
+    applyMemberUI();
+    document.getElementById("accountmodal").classList.remove("show");
+    showToast("로그아웃되었습니다");
+  });
+
   document.getElementById("loginbtn").addEventListener("click", () => {
+    if(window.psCurrentUser){
+      openAccountModal();
+      return;
+    }
     document.getElementById("login-id-input").value = "";
     document.getElementById("login-nickname-input").value = "";
     document.getElementById("login-pw-input").value = "";
@@ -2743,13 +2845,32 @@
   document.getElementById("loginmodal").addEventListener("click", (e) => { if(e.target.id === "loginmodal") document.getElementById("loginmodal").classList.remove("show"); });
 
   document.getElementById("login-submit").addEventListener("click", async () => {
-    // ---- 관리자 탭: 기존 데모 전환 그대로 유지 ----
+    // ---- 관리자 탭: 입력한 비밀번호를 서버(ADMIN_SECRET)로 검증 ----
     if(loginType === "admin"){
-      isAdmin = true;
-      try{ localStorage.setItem("pulsescore_admin", "1"); }catch(e){}
-      applyAdminUI();
-      document.getElementById("loginmodal").classList.remove("show");
-      showToast("관리자로 로그인되었습니다");
+      const secret = document.getElementById("login-pw-input").value.trim();
+      const submitBtn = document.getElementById("login-submit");
+      submitBtn.disabled = true;
+      const prevLabel = submitBtn.textContent;
+      submitBtn.textContent = "확인 중...";
+      try{
+        const res = await fetch("/api/admin/verify", { headers: { "x-admin-secret": secret } });
+        if(!res.ok){
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || "관리자 비밀번호가 올바르지 않습니다");
+        }
+        window.psAdminSecret = secret;
+        try{ sessionStorage.setItem("pulsescore_admin_secret", secret); }catch(e){}
+        isAdmin = true;
+        try{ localStorage.setItem("pulsescore_admin", "1"); }catch(e){}
+        applyAdminUI();
+        document.getElementById("loginmodal").classList.remove("show");
+        showToast("관리자로 로그인되었습니다");
+      } catch(err){
+        showToast(err.message || "관리자 로그인에 실패했습니다");
+      } finally {
+        submitBtn.textContent = prevLabel;
+        checkLoginValid();
+      }
       return;
     }
 
@@ -2782,6 +2903,7 @@
           document.getElementById("loginmodal").classList.remove("show");
         } else {
           window.psCurrentUser = data.user || null;
+          applyMemberUI();
           document.getElementById("loginmodal").classList.remove("show");
           showToast("가입 완료! 회원으로 로그인되었습니다");
         }
@@ -2789,6 +2911,7 @@
         const { data, error } = await window.psSupabase.auth.signInWithPassword({ email, password });
         if(error) throw error;
         window.psCurrentUser = data.user || null;
+        applyMemberUI();
         document.getElementById("loginmodal").classList.remove("show");
         showToast("회원으로 로그인되었습니다");
       }
@@ -2812,6 +2935,7 @@
         window.psSupabase.auth.getSession().then(({ data }) => {
           if(data && data.session && data.session.user){
             window.psCurrentUser = data.session.user;
+            applyMemberUI();
           }
         }).catch(()=>{});
       } else if(tries > 20){
@@ -2819,6 +2943,103 @@
       }
     }, 250);
   })();
+
+  // ===================== 회원 관리 (관리자 전용) =====================
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+  function formatDateTime(iso){
+    if(!iso) return "-";
+    try{
+      const d = new Date(iso);
+      return d.toLocaleString("ko-KR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+    }catch(e){ return iso; }
+  }
+  async function adminFetch(path, options){
+    if(!window.psAdminSecret){
+      throw new Error("관리자 재로그인이 필요합니다");
+    }
+    const opts = Object.assign({}, options);
+    opts.headers = Object.assign({ "x-admin-secret": window.psAdminSecret }, (options && options.headers) || {});
+    const res = await fetch(path, opts);
+    if(res.status === 401){
+      window.psAdminSecret = null;
+      try{ sessionStorage.removeItem("pulsescore_admin_secret"); }catch(e){}
+      throw new Error("관리자 인증이 만료되었습니다. 다시 로그인해주세요.");
+    }
+    const body = await res.json().catch(() => ({}));
+    if(!res.ok) throw new Error(body.error || "요청 처리 중 오류가 발생했습니다");
+    return body;
+  }
+
+  function renderMembersTable(members){
+    const body = document.getElementById("members-body");
+    if(!members.length){
+      body.innerHTML = '<div class="discuss-empty">가입한 회원이 아직 없습니다.</div>';
+      return;
+    }
+    const rows = members.map((m) => `
+      <tr data-id="${escapeHtml(m.id)}">
+        <td>
+          <div style="font-weight:700">${escapeHtml(m.email || "-")}</div>
+          ${m.nickname ? `<div style="font-size:11.5px;color:var(--text-faint)">${escapeHtml(m.nickname)}</div>` : ""}
+        </td>
+        <td style="white-space:nowrap;font-size:12.5px;color:var(--text-dim)">${formatDateTime(m.createdAt)}</td>
+        <td style="white-space:nowrap;font-size:12.5px">${m.emailConfirmed ? '<span class="chip ok">인증됨</span>' : '<span class="chip pending">미인증</span>'}</td>
+        <td style="text-align:right">
+          <button class="admin-delete-btn member-delete-btn" data-id="${escapeHtml(m.id)}" data-email="${escapeHtml(m.email || "")}" aria-label="삭제" title="삭제">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </td>
+      </tr>`).join("");
+    body.innerHTML = `
+      <div class="htable">
+        <table>
+          <thead><tr><th>회원</th><th>가입일</th><th>이메일 인증</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  async function loadMembers(){
+    const body = document.getElementById("members-body");
+    const label = document.getElementById("members-count-label");
+    body.innerHTML = '<div class="discuss-empty">불러오는 중...</div>';
+    label.textContent = "불러오는 중...";
+    try{
+      const data = await adminFetch("/api/admin/members");
+      label.textContent = `총 ${data.total ?? (data.members || []).length}명`;
+      renderMembersTable(data.members || []);
+    }catch(err){
+      label.textContent = "오류";
+      body.innerHTML = `<div class="discuss-empty">${escapeHtml(err.message || "불러오지 못했습니다")}</div>`;
+    }
+  }
+
+  function openMembersModal(){
+    document.getElementById("membersmodal").classList.add("show");
+    loadMembers();
+  }
+  document.getElementById("more-membersbtn").addEventListener("click", openMembersModal);
+  document.getElementById("members-close").addEventListener("click", () => document.getElementById("membersmodal").classList.remove("show"));
+  document.getElementById("membersmodal").addEventListener("click", (e) => { if(e.target.id === "membersmodal") document.getElementById("membersmodal").classList.remove("show"); });
+  document.getElementById("members-refresh").addEventListener("click", loadMembers);
+  document.getElementById("members-body").addEventListener("click", async (e) => {
+    const btn = e.target.closest(".member-delete-btn");
+    if(!btn) return;
+    const id = btn.getAttribute("data-id");
+    const email = btn.getAttribute("data-email");
+    if(!window.confirm(`${email || "이 회원"}을(를) 정말 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    btn.disabled = true;
+    try{
+      await adminFetch(`/api/admin/members?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      showToast("회원을 삭제했습니다");
+      loadMembers();
+    }catch(err){
+      showToast(err.message || "삭제하지 못했습니다");
+      btn.disabled = false;
+    }
+  });
 
   function openSupportModal(){
     document.getElementById("support-type-input").value = "일반 문의";
