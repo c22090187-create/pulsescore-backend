@@ -859,6 +859,7 @@
           <button class="sportcard" data-sport="baseball"><span class="ic">⚾</span>야구</button>
           <button class="sportcard" data-sport="basketball"><span class="ic">🏀</span>농구</button>
           <button class="sportcard" data-sport="volleyball"><span class="ic">🏐</span>배구</button>
+          <button class="sportcard" data-sport="hockey"><span class="ic">🏒</span>하키</button>
           <button class="sportcard" data-sport="tennis"><span class="ic">🎾</span>테니스</button>
         </div>
 
@@ -1145,7 +1146,9 @@
     "대한항공": {bg:"#1B4FA0", label:"K"}, "현대캐피탈": {bg:"#B7191E", label:"H"},
     "OK저축은행": {bg:"#E0A526", label:"O", fg:"#2A2200"}, "우리카드": {bg:"#151B3D", label:"W", fg:"#EAF3EE"},
     "정현": {bg:"#1B4FA0", label:"정"}, "카를로스 알카라스": {bg:"#E0621F", label:"A"},
-    "권순우": {bg:"#0B7A4B", label:"권"}, "다닐 메드베데프": {bg:"#7A1E2E", label:"M"}
+    "권순우": {bg:"#0B7A4B", label:"권"}, "다닐 메드베데프": {bg:"#7A1E2E", label:"M"},
+    "토론토 메이플리프스": {bg:"#0F2A63", label:"T", fg:"#EAF3EE"}, "몬트리올 캐나디언스": {bg:"#B7191E", label:"M"},
+    "보스턴 브루인스": {bg:"#2A2200", label:"B", fg:"#E0A526"}, "뉴욕 레인저스": {bg:"#1B4FA0", label:"R"}
   };
   function crestHtml(name, size, logoUrl){
     const cls = size === "sm" ? "sm-crest" : "crest";
@@ -1179,6 +1182,10 @@
       { id:"V1", home:"대한항공", away:"현대캐피탈", status:"live", clock:"3세트", hs:2, as:1 },
       { id:"V2", home:"OK저축은행", away:"우리카드", status:"upcoming", time:"19:00" }
     ]},
+    { id:"nhl", sport:"hockey", flag:"🌍", name:"NHL", matches:[
+      { id:"H1", home:"토론토 메이플리프스", away:"몬트리올 캐나디언스", status:"live", clock:"2피리어드 08:12", hs:2, as:1 },
+      { id:"H2", home:"보스턴 브루인스", away:"뉴욕 레인저스", status:"upcoming", time:"10:00" }
+    ]},
     { id:"atp", sport:"tennis", flag:"🎾", name:"ATP 투어", matches:[
       { id:"T1", home:"정현", away:"카를로스 알카라스", status:"live", clock:"2세트 4:3", hs:1, as:1 },
       { id:"T2", home:"권순우", away:"다닐 메드베데프", status:"upcoming", time:"21:00" }
@@ -1189,7 +1196,7 @@
   // 이 페이지가 백엔드와 같은 주소(예: pulsescore-backend.vercel.app)에서 열리면
   // 아래 fetch가 성공해서 실제 데이터로 자동 교체됩니다.
   // Claude 미리보기 등 다른 곳에서 열리면 fetch가 실패하고, 위의 예시 데이터가 그대로 유지됩니다.
-  const REAL_DATA_SPORTS = ["soccer", "baseball", "basketball", "volleyball"];
+  const REAL_DATA_SPORTS = ["soccer", "baseball", "basketball", "volleyball", "hockey"];
   const MAX_MATCHES_PER_SPORT = 40; // 하루치 전세계 경기가 너무 많을 수 있어 상위 N개만 표시
   let usingRealData = false;
 
@@ -1202,7 +1209,7 @@
   }
 
   function sportEmoji(sport){
-    return { soccer:"⚽", baseball:"⚾", basketball:"🏀", volleyball:"🏐", tennis:"🎾" }[sport] || "🏆";
+    return { soccer:"⚽", baseball:"⚾", basketball:"🏀", volleyball:"🏐", hockey:"🏒", tennis:"🎾" }[sport] || "🏆";
   }
 
   function realMatchesToLeagueGroups(sport, matches) {
@@ -1440,7 +1447,7 @@
     renderSpotlight();
   }
 
-  const SPORT_LABELS = { soccer:"축구", baseball:"야구", basketball:"농구", volleyball:"배구", tennis:"테니스" };
+  const SPORT_LABELS = { soccer:"축구", baseball:"야구", basketball:"농구", volleyball:"배구", hockey:"하키", tennis:"테니스" };
   const SPORT_ORDER = ["soccer","baseball","basketball","volleyball","tennis"];
 
   function leagueBtnHtml(g){

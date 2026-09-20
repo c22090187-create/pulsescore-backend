@@ -18,7 +18,7 @@ const { getCache, setCache } = require("./_cache");
 const { toKorean, KO_NAMES } = require("./_dictionary");
 const { translateBatch } = require("./_translate");
 
-const SUPPORTED_SPORTS = ["soccer", "baseball", "basketball", "volleyball"];
+const SUPPORTED_SPORTS = ["soccer", "baseball", "basketball", "volleyball", "hockey"];
 const CACHE_TTL_SECONDS = 30; // 라이브 경기는 30초 정도면 충분히 자주 갱신됩니다.
 
 // 종목마다 API-Sports 응답 구조가 조금씩 달라서, 우리 프론트엔드가 쓰기 편한

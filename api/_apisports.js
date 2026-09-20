@@ -7,11 +7,12 @@ const HOSTS = {
   baseball: "v1.baseball.api-sports.io",
   basketball: "v1.basketball.api-sports.io",
   volleyball: "v1.volleyball.api-sports.io",
+  hockey: "v1.hockey.api-sports.io",
 };
 
 /**
  * API-Sports의 특정 종목 엔드포인트를 호출합니다.
- * @param {"soccer"|"baseball"|"basketball"|"volleyball"} sport
+ * @param {"soccer"|"baseball"|"basketball"|"volleyball"|"hockey"} sport
  * @param {string} endpoint  예: "fixtures", "games"
  * @param {Record<string,string>} params  쿼리 파라미터
  */

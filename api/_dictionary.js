@@ -30,6 +30,7 @@ const KO_NAMES = {
   "NBA": "NBA",
   "KBL": "KBL",
   "V-League": "V리그",
+  "NHL": "NHL",
   "ATP": "ATP 투어",
 
   // ---- 유럽 축구 구단 ----
@@ -92,6 +93,13 @@ const KO_NAMES = {
   "Goyang Sono": "고양 소노",
   "Anyang KGC": "안양 KGC",
   "Ulsan Hyundai Mobis Phoebus": "울산 현대모비스",
+
+  // ---- NHL (자주 나오는 팀 위주) ----
+  "Toronto Maple Leafs": "토론토 메이플리프스",
+  "Montreal Canadiens": "몬트리올 캐나디언스",
+  "Boston Bruins": "보스턴 브루인스",
+  "New York Rangers": "뉴욕 레인저스",
+  "Pittsburgh Penguins": "피츠버그 펭귄스",
 };
 
 function toKorean(name) {
