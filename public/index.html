@@ -2670,48 +2670,46 @@
     }
   }
 
-  // ===================== BOARDS (자유톡 / 자유광고방 / 유료광고방 / 공지) =====================
+  // ===================== BOARDS (자유톡 / 자유광고방 / 유료광고방 / 공지) — Supabase 실제 저장 =====================
   const BOARDS = {
-    talk: { label:"자유톡", hasPrice:false, seed:[
-      { title:"오늘 K리그1 경기 다들 보셨나요?", author:"축구매니아", time:"1시간 전", body:"후반전 흐름이 정말 좋았던 것 같아요. 다들 어떻게 보셨는지 궁금하네요." },
-      { title:"야구 직관 처음 가는데 꿀팁 있을까요", author:"직관초보", time:"3시간 전", body:"이번 주말에 처음 야구장 가는데 뭘 준비해야 할지 모르겠어요." }
-    ]},
-    freead: { label:"자유 광고방", hasPrice:false, hasPhoto:true, seed:[
-      { title:"응원 유니폼 팝니다 (착용감 좋음)", author:"유니폼판매자", time:"5시간 전", body:"사이즈 L, 몇 번 안 입었어요. 직거래 가능합니다." }
-    ]},
-    paidad: { label:"유료 광고방", hasPrice:true, seed:[
-      { title:"[상단노출] 스포츠 용품 할인 이벤트", author:"공식파트너", time:"2시간 전", body:"이번 주 한정 스포츠 용품 전 품목 할인 이벤트 진행 중입니다.", price:"50,000원" }
-    ]},
-    notice: { label:"공지", hasPrice:false, pinnable:true, seed:[
-      { title:"펄스스코어 v1.2 업데이트 안내", author:"운영팀", time:"1일 전", body:"경기 중계 화면과 댓글 기능이 새롭게 추가되었습니다.", pinned:true },
-      { title:"커뮤니티 이용 안내", author:"운영팀", time:"3일 전", body:"건전한 커뮤니티 문화를 위해 서로 예의를 지켜주세요.", pinned:false }
-    ]},
-    predictverify: { label:"나의 예측결과 인증", hasPrice:false, hasPhoto:true, seed:[
-      { title:"오늘 승무패 3/3 적중 인증합니다", author:"직관러", time:"2시간 전", body:"오늘 K리그1 경기 예측 전부 맞췄어요! 스크린샷 첨부합니다." }
-    ]},
-    discussion: { label:"자유토론", hasPrice:false, seed:[
-      { title:"이번 시즌 우승팀 예상해보면?", author:"K리그팬", time:"4시간 전", body:"다들 이번 시즌 우승은 어느 팀이라고 생각하세요?" }
-    ]}
+    talk: { label:"자유톡", hasPrice:false },
+    freead: { label:"자유 광고방", hasPrice:false, hasPhoto:true },
+    paidad: { label:"유료 광고방", hasPrice:true },
+    notice: { label:"공지", hasPrice:false, pinnable:true },
+    predictverify: { label:"나의 예측결과 인증", hasPrice:false, hasPhoto:true },
+    discussion: { label:"자유토론", hasPrice:false }
   };
 
-  function loadBoardPosts(boardId){
-    const key = "pulsescore_board_" + boardId;
+  async function fetchBoardPosts(boardId){
+    if(!window.psSupabase) return [];
     try{
-      const raw = localStorage.getItem(key);
-      if(raw) return JSON.parse(raw);
-    }catch(e){}
-    const seeded = BOARDS[boardId].seed.map((p,i) => ({ id: "seed"+i, ...p }));
-    try{ localStorage.setItem(key, JSON.stringify(seeded)); }catch(e){}
-    return seeded;
-  }
-  function saveBoardPosts(boardId, list){
-    try{ localStorage.setItem("pulsescore_board_" + boardId, JSON.stringify(list)); }catch(e){}
+      const { data, error } = await window.psSupabase
+        .from("board_posts")
+        .select("id, user_id, nickname, title, body, price, photo, pinned, created_at")
+        .eq("board_id", boardId)
+        .order("created_at", { ascending: false });
+      if(error) throw error;
+      return (data || []).map((p) => ({
+        id: p.id,
+        title: p.title,
+        body: p.body,
+        author: p.nickname,
+        time: formatDateTime(p.created_at),
+        price: p.price || undefined,
+        photo: p.photo || undefined,
+        pinned: !!p.pinned,
+      }));
+    }catch(err){
+      console.warn("[PulseScore] 게시글 불러오기 실패:", err);
+      return [];
+    }
   }
 
-  function renderBoard(boardId){
+  async function renderBoard(boardId){
     const el = document.getElementById("board-" + boardId);
     if(!el) return;
-    let posts = loadBoardPosts(boardId);
+    el.innerHTML = `<div class="panel emptypanel"><span>불러오는 중...</span></div>`;
+    let posts = await fetchBoardPosts(boardId);
     if(BOARDS[boardId].pinnable) posts = [...posts].sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0));
     el.innerHTML = posts.map(p => {
       const threadKey = "board_" + boardId + ":" + p.id;
@@ -2721,9 +2719,9 @@
           ${p.photo ? `<img src="${p.photo}" alt="" style="width:52px;height:52px;border-radius:8px;object-fit:cover;flex-shrink:0">` : ""}
           <div style="min-width:0;flex:1">
             <div class="bp-title">${p.pinned ? '<span class="bp-pin">공지</span>':''}${escapeHtml(p.title)}</div>
-            <div class="bp-meta"><span>${p.author}</span><span>·</span><span>${p.time}</span></div>
+            <div class="bp-meta"><span>${escapeHtml(p.author)}</span><span>·</span><span>${p.time}</span></div>
           </div>
-          ${p.price ? `<div class="bp-price">${p.price}</div>` : ""}
+          ${p.price ? `<div class="bp-price">${escapeHtml(p.price)}</div>` : ""}
           <div class="bp-comments">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
             ${cCount}
@@ -2733,29 +2731,31 @@
       `;
     }).join("") || `<div class="panel emptypanel"><span>아직 게시글이 없습니다.</span></div>`;
     el.querySelectorAll("[data-delpost]").forEach(btn => {
-      btn.addEventListener("click", (e) => {
+      btn.addEventListener("click", async (e) => {
         e.stopPropagation();
         const bId = btn.getAttribute("data-delboard");
         const pId = btn.getAttribute("data-delpost");
-        const posts2 = loadBoardPosts(bId).filter(p => p.id !== pId);
-        saveBoardPosts(bId, posts2);
-        try{ localStorage.removeItem("pulsescore_comments_board_" + bId + ":" + pId); }catch(err){}
-        renderBoard(bId);
-        showToast("게시글이 삭제되었습니다");
+        try{
+          await adminFetch("/api/admin/boardposts?id=" + encodeURIComponent(pId), { method:"DELETE" });
+          showToast("게시글이 삭제되었습니다");
+          renderBoard(bId);
+        }catch(err){
+          showToast(err.message || "게시글 삭제에 실패했습니다");
+        }
       });
     });
     el.querySelectorAll(".boardpost").forEach(row => {
       row.addEventListener("click", () => {
         const bId = row.getAttribute("data-board");
         const pId = row.getAttribute("data-postid");
-        const post = loadBoardPosts(bId).find(p => p.id === pId);
+        const post = posts.find(p => p.id === pId);
         if(!post) return;
         const photoHtml = post.photo ? `<img src="${post.photo}" alt="" style="width:100%;border-radius:10px;margin-bottom:10px;display:block">` : "";
         openThreadModal({
           threadKey: "board_" + bId + ":" + pId,
           headerTitle: post.title,
           headerLeague: BOARDS[bId].label,
-          headerStatus: `${post.author} · ${post.time}${post.price ? ' · ' + post.price : ''}`,
+          headerStatus: `${escapeHtml(post.author)} · ${post.time}${post.price ? ' · ' + escapeHtml(post.price) : ''}`,
           bodyHtml: photoHtml + escapeHtml(post.body).replace(/\n/g,"<br>"),
           seedFn: () => seedGenericComments(["좋은 정보 감사합니다", "저도 궁금했던 내용이에요", "댓글 남깁니다"])
         });
@@ -2817,17 +2817,40 @@
   document.getElementById("write-body-input").addEventListener("input", checkWriteValid);
   document.getElementById("write-close").addEventListener("click", () => document.getElementById("writemodal").classList.remove("show"));
   document.getElementById("writemodal").addEventListener("click", (e) => { if(e.target.id === "writemodal") document.getElementById("writemodal").classList.remove("show"); });
-  document.getElementById("write-submit").addEventListener("click", () => {
+  document.getElementById("write-submit").addEventListener("click", async () => {
     const title = document.getElementById("write-title-input").value.trim();
     const body = document.getElementById("write-body-input").value.trim();
     const price = document.getElementById("write-price-input").value.trim();
     if(!title || !body || !writeBoardId) return;
-    const posts = loadBoardPosts(writeBoardId);
-    posts.unshift({ id: "p" + Date.now(), title, body, author:"나", time:"방금 전", price: price || undefined, photo: writePhotoData || undefined, pinned:false });
-    saveBoardPosts(writeBoardId, posts);
-    document.getElementById("writemodal").classList.remove("show");
-    renderBoard(writeBoardId);
-    showToast("등록되었습니다");
+    if(!window.psCurrentUser){
+      showToast("글쓰기는 로그인 후 이용할 수 있어요");
+      document.getElementById("loginbtn").click();
+      return;
+    }
+    if(!window.psSupabase){ showToast("Supabase 연동이 준비되지 않았습니다"); return; }
+    const submitBtn = document.getElementById("write-submit");
+    submitBtn.disabled = true;
+    try{
+      const nickname = memberDisplayName(window.psCurrentUser);
+      const { error } = await window.psSupabase.from("board_posts").insert({
+        board_id: writeBoardId,
+        user_id: window.psCurrentUser.id,
+        nickname,
+        title,
+        body,
+        price: price || null,
+        photo: writePhotoData || null,
+        pinned: false,
+      });
+      if(error) throw error;
+      document.getElementById("writemodal").classList.remove("show");
+      renderBoard(writeBoardId);
+      showToast("등록되었습니다");
+    }catch(err){
+      console.warn("[PulseScore] 게시글 등록 실패:", err);
+      showToast(err.message || "등록에 실패했습니다");
+      submitBtn.disabled = false;
+    }
   });
 
   // ===================== 자유게시판 (세부 카테고리: 예측결과 인증 / 자유토론) =====================
