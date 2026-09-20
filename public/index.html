@@ -1412,6 +1412,90 @@
   let currentLeagueFilter = "all";
   const bookmarks = {};
 
+  // ===================== 즐겨찾기(관심 경기) — Supabase 연동 =====================
+  // 로그인한 회원의 즐겨찾기는 favorites 테이블에 저장되어 새로고침·다른 기기에서도 유지됩니다.
+  // 로그인하지 않은 경우엔 로그인 모달을 열어 안내합니다.
+  function syncBookmarkUI(id, active){
+    document.querySelectorAll('.rowbookmark[data-id="' + id + '"]').forEach((b) => {
+      b.classList.toggle("active", active);
+      const svg = b.querySelector("svg");
+      if(svg) svg.setAttribute("fill", active ? "currentColor" : "none");
+    });
+    if(typeof currentFavoriteId !== "undefined" && currentFavoriteId === id && typeof updateDmFavBtn === "function"){
+      updateDmFavBtn();
+    }
+  }
+  async function setBookmark(id, active){
+    if(!id) return;
+    if(!window.psCurrentUser){
+      showToast("즐겨찾기는 로그인 후 이용할 수 있어요");
+      document.getElementById("loginbtn").click();
+      return;
+    }
+    const prev = !!bookmarks[id];
+    if(prev === active) return;
+    bookmarks[id] = active;
+    syncBookmarkUI(id, active);
+    renderFavList();
+    renderSpotlight();
+    showToast(active ? "관심 경기에 추가했습니다" : "관심 경기에서 제거했습니다");
+    try{
+      if(!window.psSupabase) throw new Error("Supabase 연동이 준비되지 않았습니다");
+      if(active){
+        const { error } = await window.psSupabase
+          .from("favorites")
+          .upsert({ user_id: window.psCurrentUser.id, match_id: id }, { onConflict: "user_id,match_id" });
+        if(error) throw error;
+      } else {
+        const { error } = await window.psSupabase
+          .from("favorites").delete()
+          .eq("user_id", window.psCurrentUser.id).eq("match_id", id);
+        if(error) throw error;
+      }
+    }catch(err){
+      console.warn("[PulseScore] 즐겨찾기 저장 실패:", err);
+      bookmarks[id] = prev;
+      syncBookmarkUI(id, prev);
+      renderFavList();
+      renderSpotlight();
+      showToast(err.message || "즐겨찾기 저장에 실패했습니다");
+    }
+  }
+  function toggleBookmark(id){ setBookmark(id, !bookmarks[id]); }
+
+  async function loadBookmarksFromSupabase(){
+    if(!window.psSupabase || !window.psCurrentUser) return;
+    try{
+      const { data, error } = await window.psSupabase
+        .from("favorites").select("match_id")
+        .eq("user_id", window.psCurrentUser.id);
+      if(error) throw error;
+      Object.keys(bookmarks).forEach((k) => delete bookmarks[k]);
+      (data || []).forEach((row) => { bookmarks[row.match_id] = true; });
+      document.querySelectorAll(".rowbookmark").forEach((b) => {
+        const id = b.getAttribute("data-id");
+        const active = !!bookmarks[id];
+        b.classList.toggle("active", active);
+        const svg = b.querySelector("svg");
+        if(svg) svg.setAttribute("fill", active ? "currentColor" : "none");
+      });
+      renderFavList();
+      renderSpotlight();
+    }catch(err){
+      console.warn("[PulseScore] 즐겨찾기 불러오기 실패:", err);
+    }
+  }
+  function clearLocalBookmarks(){
+    Object.keys(bookmarks).forEach((k) => delete bookmarks[k]);
+    document.querySelectorAll(".rowbookmark").forEach((b) => {
+      b.classList.remove("active");
+      const svg = b.querySelector("svg");
+      if(svg) svg.setAttribute("fill", "none");
+    });
+    renderFavList();
+    renderSpotlight();
+  }
+
   // ---------- ADMIN MODE (배너 관리 등 관리자 전용 기능 노출 제어) ----------
   let isAdmin = false;
   try{ isAdmin = localStorage.getItem("pulsescore_admin") === "1"; }catch(e){ isAdmin = false; }
@@ -1568,12 +1652,7 @@
     wrap.querySelectorAll(".rowbookmark").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const id = btn.getAttribute("data-id");
-        bookmarks[id] = !bookmarks[id];
-        btn.classList.toggle("active", !!bookmarks[id]);
-        showToast(bookmarks[id] ? "관심 경기에 추가했습니다" : "관심 경기에서 제거했습니다");
-        renderFavList();
-        renderSpotlight();
+        toggleBookmark(btn.getAttribute("data-id"));
       });
     });
 
@@ -1663,13 +1742,7 @@
     el.querySelectorAll("[data-favremove]").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const id = btn.getAttribute("data-favremove");
-        bookmarks[id] = false;
-        renderFavList();
-        renderSpotlight();
-        const row = document.querySelector(`.scorerow[data-id="${id}"] .rowbookmark`);
-        if(row) row.classList.remove("active");
-        showToast("즐겨찾기에서 제거했습니다");
+        setBookmark(btn.getAttribute("data-favremove"), false);
       });
     });
   }
@@ -1731,11 +1804,7 @@
       btn.addEventListener("click", () => { spotlightTab = btn.getAttribute("data-tab"); renderSpotlight(); });
     });
     const favBtn = document.getElementById("spotlight-favbtn");
-    if(favBtn) favBtn.addEventListener("click", () => {
-      bookmarks[target.id] = !bookmarks[target.id];
-      showToast(bookmarks[target.id] ? "관심 경기에 추가했습니다" : "관심 경기에서 제거했습니다");
-      renderFavList(); renderSpotlight();
-    });
+    if(favBtn) favBtn.addEventListener("click", () => toggleBookmark(target.id));
     const watchBtn = document.getElementById("spotlight-watch");
     if(watchBtn) watchBtn.addEventListener("click", () => openDiscussModal(target.id));
   }
@@ -2224,13 +2293,7 @@
   }
   document.getElementById("dm-favbtn").addEventListener("click", () => {
     if(!currentFavoriteId) return;
-    bookmarks[currentFavoriteId] = !bookmarks[currentFavoriteId];
-    updateDmFavBtn();
-    renderFavList();
-    renderSpotlight();
-    const rowBtn = document.querySelector(`.scorerow[data-id="${currentFavoriteId}"] .rowbookmark`);
-    if(rowBtn) rowBtn.classList.toggle("active", !!bookmarks[currentFavoriteId]);
-    showToast(bookmarks[currentFavoriteId] ? "관심 경기에 추가했습니다" : "관심 경기에서 제거했습니다");
+    toggleBookmark(currentFavoriteId);
   });
 
   // matches keep their original entry point
@@ -2773,6 +2836,7 @@
     }catch(err){ /* ignore */ }
     window.psCurrentUser = null;
     applyMemberUI();
+    clearLocalBookmarks();
     document.getElementById("accountmodal").classList.remove("show");
     showToast("로그아웃되었습니다");
   });
@@ -2889,6 +2953,7 @@
         } else {
           window.psCurrentUser = data.user || null;
           applyMemberUI();
+          loadBookmarksFromSupabase();
           document.getElementById("loginmodal").classList.remove("show");
           showToast("가입 완료! 회원으로 로그인되었습니다");
         }
@@ -2897,6 +2962,7 @@
         if(error) throw error;
         window.psCurrentUser = data.user || null;
         applyMemberUI();
+        loadBookmarksFromSupabase();
         document.getElementById("loginmodal").classList.remove("show");
         showToast("회원으로 로그인되었습니다");
       }
@@ -2921,6 +2987,7 @@
           if(data && data.session && data.session.user){
             window.psCurrentUser = data.session.user;
             applyMemberUI();
+            loadBookmarksFromSupabase();
           }
         }).catch(()=>{});
       } else if(tries > 20){
