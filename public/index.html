@@ -217,11 +217,19 @@
   }
   @media (max-width:640px){ .bannercarousel{ aspect-ratio: 16/4.5; } }
   .bannerslide{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center;
-    opacity:0; transition: opacity .5s ease; padding:20px;
-    background-size: cover; background-position:center;
+    position:absolute; inset:0; overflow:hidden;
+    opacity:0; transition: opacity .5s ease;
   }
   .bannerslide.show{ opacity:1; }
+  .bannerslide.fallbackslide{
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:20px;
+    background-size: cover; background-position:center;
+  }
+  .bannerslide-bg{
+    position:absolute; inset:0; background-size:cover; background-position:center;
+    filter: blur(20px) brightness(0.65); transform: scale(1.15);
+  }
+  .bannerslide-img{ position:relative; width:100%; height:100%; object-fit:contain; display:block; }
   .bannerslide .fallback{ display:flex; flex-direction:column; gap:6px; align-items:center; color: rgba(255,255,255,0.92); }
   .bannerslide .fallback b{ font-size:clamp(16px,2.6vw,22px); font-weight:800; }
   .bannerslide .fallback span{ font-size:12.5px; opacity:.75; }
@@ -1585,10 +1593,17 @@
       if(!el) return;
       const slots = banners.slice(row.start, row.start + row.count);
       el.innerHTML = slots.map((b, i) => {
+        const showCls = i === bannerIdx[r] ? "show" : "";
+        if(b){
+          // 실제 배너 이미지: 잘리지 않게 전체를 다 보여주고(object-fit:contain),
+          // 뒤에는 같은 이미지를 흐리게 깔아서 빈 공간이 없어 보이게 합니다.
+          return `<div class="bannerslide ${showCls}">
+            <div class="bannerslide-bg" style="background-image:url('${b}')"></div>
+            <img src="${b}" alt="배너" class="bannerslide-img">
+          </div>`;
+        }
         const fb = BANNER_FALLBACKS[(row.start + i) % BANNER_FALLBACKS.length];
-        const bg = b ? `background-image:url('${b}')` : `background:${fb.grad}`;
-        const content = b ? "" : `<div class="fallback"><b>${fb.title}</b><span>${fb.sub}</span></div>`;
-        return `<div class="bannerslide ${i === bannerIdx[r] ? 'show':''}" style="${bg}">${content}</div>`;
+        return `<div class="bannerslide fallbackslide ${showCls}" style="background:${fb.grad}"><div class="fallback"><b>${fb.title}</b><span>${fb.sub}</span></div></div>`;
       }).join("") + `<div class="bannerdots">${slots.map((_,i) => `<button class="${i===bannerIdx[r]?'active':''}" data-dot="${i}"></button>`).join("")}</div>`;
       el.querySelectorAll("[data-dot]").forEach(d => {
         d.addEventListener("click", () => { bannerIdx[r] = Number(d.getAttribute("data-dot")); renderBannerCarousel(); resetBannerTimer(); });
