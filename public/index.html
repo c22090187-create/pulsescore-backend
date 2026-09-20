@@ -577,6 +577,17 @@
   .boardpost .bp-price{ font-size:14px; font-weight:800; color: var(--accent); flex-shrink:0; white-space:nowrap; }
   .boardpost .bp-comments{ font-size:12px; color: var(--text-dim); font-weight:600; flex-shrink:0; display:flex; align-items:center; gap:4px; }
 
+  .boardgrid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:640px){ .boardgrid{ grid-template-columns:1fr; } }
+  .boardpage{ display:flex; align-items:center; justify-content:center; gap:14px; margin-top:16px; }
+  .pagebtn{
+    border:1px solid var(--line); background: var(--panel); color: var(--text); font-weight:700; font-size:13px;
+    padding:8px 16px; border-radius:999px; cursor:pointer;
+  }
+  .pagebtn:hover{ border-color: var(--accent-line); }
+  .pagebtn:disabled{ opacity:.4; cursor:default; }
+  .pageinfo{ font-size:13px; color: var(--text-dim); font-weight:600; }
+
   .writebtn{
     border:none; background: var(--accent); color:#06231A; font-weight:700; font-size:13.5px;
     padding:10px 20px; border-radius:999px; display:flex; align-items:center; gap:6px;
@@ -2630,6 +2641,9 @@
     discussion: { label:"자유토론", hasPrice:false }
   };
 
+  const BOARD_PAGE_SIZE = 20;
+  let boardPage = {}; // boardId -> 0-based current page (image-only boards only)
+
   async function fetchBoardPosts(boardId){
     if(!window.psSupabase) return [];
     try{
@@ -2680,7 +2694,13 @@
     let [posts, commentCounts] = await Promise.all([fetchBoardPosts(boardId), fetchBoardCommentCounts(boardId)]);
     if(BOARDS[boardId].pinnable) posts = [...posts].sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0));
     const imageOnly = !!BOARDS[boardId].imageOnly;
-    el.innerHTML = posts.map(p => {
+
+    const totalPages = imageOnly ? Math.max(1, Math.ceil(posts.length / BOARD_PAGE_SIZE)) : 1;
+    const page = imageOnly ? Math.min(boardPage[boardId] || 0, totalPages - 1) : 0;
+    if(imageOnly) boardPage[boardId] = page;
+    const pagePosts = imageOnly ? posts.slice(page * BOARD_PAGE_SIZE, page * BOARD_PAGE_SIZE + BOARD_PAGE_SIZE) : posts;
+
+    const cardsHtml = pagePosts.map(p => {
       const threadKey = "board_" + boardId + ":" + p.id;
       const cCount = commentCounts[threadKey] || 0;
       if(imageOnly){
@@ -2709,7 +2729,21 @@
           ${isAdmin ? `<button class="admin-delete-btn" data-delpost="${p.id}" data-delboard="${boardId}" aria-label="삭제"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}
         </div>
       `;
-    }).join("") || `<div class="panel emptypanel"><span>아직 게시글이 없습니다.</span></div>`;
+    }).join("");
+
+    const listHtml = cardsHtml || `<div class="panel emptypanel"><span>아직 게시글이 없습니다.</span></div>`;
+    if(imageOnly){
+      const pagerHtml = totalPages > 1 ? `
+        <div class="boardpage">
+          <button class="pagebtn" id="board-prevpage" ${page===0 ? "disabled" : ""}>이전</button>
+          <span class="pageinfo">${page+1} / ${totalPages}</span>
+          <button class="pagebtn" id="board-nextpage" ${page>=totalPages-1 ? "disabled" : ""}>다음</button>
+        </div>
+      ` : "";
+      el.innerHTML = (cardsHtml ? `<div class="boardgrid">${cardsHtml}</div>` : listHtml) + pagerHtml;
+    } else {
+      el.innerHTML = listHtml;
+    }
     el.querySelectorAll("[data-delpost]").forEach(btn => {
       btn.addEventListener("click", async (e) => {
         e.stopPropagation();
@@ -2724,6 +2758,12 @@
         }
       });
     });
+    if(imageOnly){
+      const prevBtn = document.getElementById("board-prevpage");
+      const nextBtn = document.getElementById("board-nextpage");
+      if(prevBtn) prevBtn.addEventListener("click", () => { boardPage[boardId] = Math.max(0, page - 1); renderBoard(boardId); });
+      if(nextBtn) nextBtn.addEventListener("click", () => { boardPage[boardId] = Math.min(totalPages - 1, page + 1); renderBoard(boardId); });
+    }
     if(!imageOnly) el.querySelectorAll(".boardpost").forEach(row => {
       row.addEventListener("click", () => {
         const bId = row.getAttribute("data-board");
