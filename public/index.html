@@ -210,11 +210,12 @@
   .admin-delete-btn.sm{ width:20px; height:20px; margin-left:auto; }
 
   .avatarbtn.admin-on{ background: var(--live-dim); color: var(--live); border-color: rgba(255,90,95,0.35); }
+  .bannercarousel-row{ display:flex; flex-direction:column; gap:10px; }
   .bannercarousel{
     position:relative; border-radius: var(--radius-l); overflow:hidden; border:1px solid var(--line);
-    aspect-ratio: 16/5.2; background: var(--panel);
+    aspect-ratio: 16/2.6; background: var(--panel);
   }
-  @media (max-width:640px){ .bannercarousel{ aspect-ratio: 16/9; } }
+  @media (max-width:640px){ .bannercarousel{ aspect-ratio: 16/4.5; } }
   .bannerslide{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center;
     opacity:0; transition: opacity .5s ease; padding:20px;
@@ -804,6 +805,29 @@
 
 <div class="shell">
 
+  <!-- SUPER BANNER: 어떤 카테고리(탭)를 눌러도 항상 보이도록 페이지 전환 영역 바깥에 고정 배치 -->
+  <div class="bannersection">
+    <div class="bannerhead">
+      <span class="eyebrow">SUPER BANNER</span>
+      <button class="bannermanage-toggle" id="bannertoggle">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        배너 관리
+      </button>
+    </div>
+    <div class="bannercarousel-row">
+      <div class="bannercarousel" id="bannercarousel-top"></div>
+      <div class="bannercarousel" id="bannercarousel-bottom"></div>
+    </div>
+    <div class="banneradmin" id="banneradmin">
+      <div class="banneradmin-head">
+        <span class="label">가로형 이미지 10칸(2줄 × 5칸) · 1200×675px JPG 또는 PNG</span>
+      </div>
+      <div class="bannergrid" id="bannergrid"></div>
+      <button class="bannerregisterbtn" id="bannerregister">등록 완료</button>
+      <div class="bannerreadystatus" id="bannerreadystatus"></div>
+    </div>
+  </div>
+
   <!-- ===================== PAGE: 경기 (live scores) ===================== -->
   <div class="page active" id="page-scores">
 
@@ -817,25 +841,6 @@
           <span style="width:6px;height:6px;border-radius:50%;background:var(--accent)"></span>실시간 데이터 연동됨
         </span>
         <div class="kst">모든 경기 시간 <b>KST</b></div>
-      </div>
-    </div>
-
-    <div class="bannersection">
-      <div class="bannerhead">
-        <span class="eyebrow">SUPER BANNER</span>
-        <button class="bannermanage-toggle" id="bannertoggle">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-          배너 관리
-        </button>
-      </div>
-      <div class="bannercarousel" id="bannercarousel"></div>
-      <div class="banneradmin" id="banneradmin">
-        <div class="banneradmin-head">
-          <span class="label">가로형 이미지 5칸 · 1200×675px JPG 또는 PNG</span>
-        </div>
-        <div class="bannergrid" id="bannergrid"></div>
-        <button class="bannerregisterbtn" id="bannerregister">등록 완료</button>
-        <div class="bannerreadystatus" id="bannerreadystatus"></div>
       </div>
     </div>
 
@@ -1535,7 +1540,12 @@
   }
 
   // ---------- SUPER BANNER (Supabase에 실제 저장, 관리자만 수정 가능) ----------
-  const BANNER_SLOTS = 5;
+  const BANNER_SLOTS = 10;
+  // 배너를 위/아래 두 줄로 나눠서 보여줍니다 (각 줄이 자기 슬롯만 따로 자동재생).
+  const BANNER_ROWS = [
+    { elId: "bannercarousel-top", start: 0, count: BANNER_SLOTS / 2 },
+    { elId: "bannercarousel-bottom", start: BANNER_SLOTS / 2, count: BANNER_SLOTS / 2 }
+  ];
   let banners = new Array(BANNER_SLOTS).fill(null);
 
   async function fetchBanners(){
@@ -1566,27 +1576,33 @@
     { grad:"linear-gradient(135deg,#5C4B12,#0A1613)", title:"광고 문의", sub:"자유·유료 광고방에서 배너를 등록해보세요" }
   ];
 
-  let bannerIdx = 0;
-  let bannerTimer = null;
+  let bannerIdx = BANNER_ROWS.map(() => 0); // 줄(row)별 현재 슬라이드 인덱스
+  let bannerTimer = BANNER_ROWS.map(() => null); // 줄별 자동재생 타이머
 
   function renderBannerCarousel(){
-    const el = document.getElementById("bannercarousel");
-    el.innerHTML = banners.map((b, i) => {
-      const fb = BANNER_FALLBACKS[i % BANNER_FALLBACKS.length];
-      const bg = b ? `background-image:url('${b}')` : `background:${fb.grad}`;
-      const content = b ? "" : `<div class="fallback"><b>${fb.title}</b><span>${fb.sub}</span></div>`;
-      return `<div class="bannerslide ${i === bannerIdx ? 'show':''}" style="${bg}">${content}</div>`;
-    }).join("") + `<div class="bannerdots">${banners.map((_,i) => `<button class="${i===bannerIdx?'active':''}" data-dot="${i}"></button>`).join("")}</div>`;
-    el.querySelectorAll("[data-dot]").forEach(d => {
-      d.addEventListener("click", () => { bannerIdx = Number(d.getAttribute("data-dot")); renderBannerCarousel(); resetBannerTimer(); });
+    BANNER_ROWS.forEach((row, r) => {
+      const el = document.getElementById(row.elId);
+      if(!el) return;
+      const slots = banners.slice(row.start, row.start + row.count);
+      el.innerHTML = slots.map((b, i) => {
+        const fb = BANNER_FALLBACKS[(row.start + i) % BANNER_FALLBACKS.length];
+        const bg = b ? `background-image:url('${b}')` : `background:${fb.grad}`;
+        const content = b ? "" : `<div class="fallback"><b>${fb.title}</b><span>${fb.sub}</span></div>`;
+        return `<div class="bannerslide ${i === bannerIdx[r] ? 'show':''}" style="${bg}">${content}</div>`;
+      }).join("") + `<div class="bannerdots">${slots.map((_,i) => `<button class="${i===bannerIdx[r]?'active':''}" data-dot="${i}"></button>`).join("")}</div>`;
+      el.querySelectorAll("[data-dot]").forEach(d => {
+        d.addEventListener("click", () => { bannerIdx[r] = Number(d.getAttribute("data-dot")); renderBannerCarousel(); resetBannerTimer(); });
+      });
     });
   }
   function resetBannerTimer(){
-    clearInterval(bannerTimer);
-    bannerTimer = setInterval(() => {
-      bannerIdx = (bannerIdx + 1) % banners.length;
-      renderBannerCarousel();
-    }, 4500);
+    bannerTimer.forEach(t => clearInterval(t));
+    BANNER_ROWS.forEach((row, r) => {
+      bannerTimer[r] = setInterval(() => {
+        bannerIdx[r] = (bannerIdx[r] + 1) % row.count;
+        renderBannerCarousel();
+      }, 4500);
+    });
   }
 
   function renderBannerAdmin(){
@@ -1650,7 +1666,7 @@
           body: JSON.stringify({ slot, image: banners[slot] || null }),
         });
       }
-      bannerIdx = 0;
+      bannerIdx = BANNER_ROWS.map(() => 0);
       renderBannerCarousel();
       resetBannerTimer();
       showToast("배너가 등록되었습니다");
