@@ -2685,10 +2685,10 @@
       const cCount = commentCounts[threadKey] || 0;
       if(imageOnly){
         return `
-          <div class="boardpost" data-postid="${p.id}" data-board="${boardId}" style="display:block;padding:0;overflow:hidden;position:relative">
+          <div class="boardpost" data-postid="${p.id}" data-board="${boardId}" style="background:transparent;border:none;padding:0;display:flex;justify-content:center;position:relative">
             ${p.photo
-              ? `<img src="${p.photo}" alt="광고" style="width:100%;max-height:180px;object-fit:contain;background:var(--panel-2);display:block">`
-              : `<div class="emptypanel" style="margin:0;padding:30px"><span>등록된 광고 이미지가 없습니다.</span></div>`}
+              ? `<img src="${p.photo}" alt="광고" style="max-width:100%;max-height:320px;width:auto;height:auto;border-radius:var(--radius-m);display:block">`
+              : `<div class="emptypanel" style="margin:0;padding:30px;width:100%"><span>등록된 광고 이미지가 없습니다.</span></div>`}
             ${isAdmin ? `<button class="admin-delete-btn" data-delpost="${p.id}" data-delboard="${boardId}" aria-label="삭제" style="position:absolute;top:10px;right:10px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}
           </div>
         `;
