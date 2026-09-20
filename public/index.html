@@ -898,6 +898,8 @@
           <button class="active" data-sport="soccer">⚽ 축구</button>
           <button data-sport="baseball">⚾ 야구</button>
           <button data-sport="basketball">🏀 농구</button>
+          <button data-sport="volleyball">🏐 배구</button>
+          <button data-sport="hockey">🏒 하키</button>
         </div>
         <div class="matchlist" id="matchlist"></div>
       </div>
@@ -1208,6 +1210,51 @@
     return "live";
   }
 
+  function formatKickoffKr(iso){
+    if(!iso) return "";
+    const d = new Date(iso);
+    const md = d.toLocaleDateString("ko-KR", { month:"long", day:"numeric" });
+    const hm = d.toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit", hour12:false });
+    return `${md} ${hm}`;
+  }
+
+  // 실제 배당 데이터는 API-Sports 무료 플랜에 없어서, 종목별로 자연스러운
+  // 기준선(핸디캡·언더오버)을 자동으로 만들어줍니다. (실제 배당이 아닌 예시 기준선입니다)
+  function syntheticOptsFor(sport, home, away){
+    const table = {
+      soccer:    { hcap:"1.0", ou:"2.5", hasDraw:true },
+      baseball:  { hcap:"1.5", ou:"8.5", hasDraw:true },
+      basketball:{ hcap:"5.5", ou:"160.5", hasDraw:false },
+      volleyball:{ hcap:"1.5세트", ou:"3.5세트", hasDraw:false },
+      hockey:    { hcap:"1.5", ou:"5.5", hasDraw:true },
+    };
+    const cfg = table[sport] || table.soccer;
+    const wdl = cfg.hasDraw
+      ? [{k:"home",t:`${home} 승`},{k:"draw",t:"무승부"},{k:"away",t:`${away} 승`}]
+      : [{k:"home",t:`${home} 승`},{k:"away",t:`${away} 승`}];
+    return {
+      wdl,
+      handicap:[{k:"home",t:`${home} -${cfg.hcap}`},{k:"line",t:"핸디캡 기준점",sub:`-${cfg.hcap} / +${cfg.hcap}`,fixed:true},{k:"away",t:`${away} +${cfg.hcap}`}],
+      ou:[{k:"under",t:`${cfg.ou} 언더`},{k:"line",t:"언더·오버 기준점",sub:cfg.ou,fixed:true},{k:"over",t:`${cfg.ou} 오버`}]
+    };
+  }
+
+  function realMatchesToPredictEntries(sport, league, matches){
+    return matches
+      .filter(m => classifyStatus(m.status) !== "finished")
+      .slice(0, 6)
+      .map(m => ({
+        id: "predict-" + sport + "-" + m.id,
+        sport,
+        league: m.leagueKo || m.league || league,
+        date: formatKickoffKr(m.kickoff),
+        status: classifyStatus(m.status) === "live" ? "진행중" : "예정",
+        home: m.homeKo || m.home,
+        away: m.awayKo || m.away,
+        opts: syntheticOptsFor(sport, m.homeKo || m.home, m.awayKo || m.away)
+      }));
+  }
+
   function sportEmoji(sport){
     return { soccer:"⚽", baseball:"⚾", basketball:"🏀", volleyball:"🏐", hockey:"🏒", tennis:"🎾" }[sport] || "🏆";
   }
@@ -1269,6 +1316,14 @@
           if (LEAGUES[j].sport === sport) LEAGUES.splice(j, 1);
         }
         LEAGUES.push(...groups);
+
+        // "나의 경기 예측" 페이지도 같은 실제 경기로 교체합니다.
+        const predictEntries = realMatchesToPredictEntries(sport, SPORT_LABELS[sport] || sport, result.value);
+        for (let j = MATCHES.length - 1; j >= 0; j--) {
+          if (MATCHES[j].sport === sport) MATCHES.splice(j, 1);
+        }
+        MATCHES.push(...predictEntries);
+
         anySuccess = true;
       }
       // 실패한 종목은 예시 데이터를 그대로 둡니다.
@@ -1279,6 +1334,8 @@
       const badge = document.getElementById("realdata-badge");
       if (badge) badge.style.display = "inline-flex";
       renderScoresPage();
+      renderMatchList();
+      renderPredictPanel();
     }
   }
 
@@ -1721,7 +1778,23 @@
     { id:"k2", sport:"basketball", league:"KBL", date:"9월 21일 17:00", status:"예정", home:"서울 SK", away:"고양 소노",
       opts:{ wdl:[{k:"home",t:"서울 승"},{k:"away",t:"고양 승"}],
         handicap:[{k:"home",t:"서울 -6.5"},{k:"line",t:"핸디캡 기준점",sub:"-6.5 / +6.5",fixed:true},{k:"away",t:"고양 +6.5"}],
-        ou:[{k:"under",t:"161.5 언더"},{k:"line",t:"언더·오버 기준점",sub:"161.5",fixed:true},{k:"over",t:"161.5 오버"}] } }
+        ou:[{k:"under",t:"161.5 언더"},{k:"line",t:"언더·오버 기준점",sub:"161.5",fixed:true},{k:"over",t:"161.5 오버"}] } },
+    { id:"v1", sport:"volleyball", league:"V리그", date:"9월 20일 19:00", status:"예정", home:"대한항공", away:"현대캐피탈",
+      opts:{ wdl:[{k:"home",t:"대한항공 승"},{k:"away",t:"현대캐피탈 승"}],
+        handicap:[{k:"home",t:"대한항공 -1.5세트"},{k:"line",t:"핸디캡 기준점",sub:"-1.5 / +1.5",fixed:true},{k:"away",t:"현대캐피탈 +1.5세트"}],
+        ou:[{k:"under",t:"3.5세트 언더"},{k:"line",t:"언더·오버 기준점",sub:"3.5",fixed:true},{k:"over",t:"3.5세트 오버"}] } },
+    { id:"v2", sport:"volleyball", league:"V리그", date:"9월 21일 19:00", status:"예정", home:"OK저축은행", away:"우리카드",
+      opts:{ wdl:[{k:"home",t:"OK저축은행 승"},{k:"away",t:"우리카드 승"}],
+        handicap:[{k:"home",t:"OK저축은행 -1.5세트"},{k:"line",t:"핸디캡 기준점",sub:"-1.5 / +1.5",fixed:true},{k:"away",t:"우리카드 +1.5세트"}],
+        ou:[{k:"under",t:"3.5세트 언더"},{k:"line",t:"언더·오버 기준점",sub:"3.5",fixed:true},{k:"over",t:"3.5세트 오버"}] } },
+    { id:"h1", sport:"hockey", league:"NHL", date:"9월 20일 10:00", status:"예정", home:"토론토 메이플리프스", away:"몬트리올 캐나디언스",
+      opts:{ wdl:[{k:"home",t:"토론토 승"},{k:"draw",t:"연장·승부치기"},{k:"away",t:"몬트리올 승"}],
+        handicap:[{k:"home",t:"토론토 -1.5"},{k:"line",t:"핸디캡 기준점",sub:"-1.5 / +1.5",fixed:true},{k:"away",t:"몬트리올 +1.5"}],
+        ou:[{k:"under",t:"5.5 언더"},{k:"line",t:"언더·오버 기준점",sub:"5.5",fixed:true},{k:"over",t:"5.5 오버"}] } },
+    { id:"h2", sport:"hockey", league:"NHL", date:"9월 21일 09:00", status:"예정", home:"보스턴 브루인스", away:"뉴욕 레인저스",
+      opts:{ wdl:[{k:"home",t:"보스턴 승"},{k:"draw",t:"연장·승부치기"},{k:"away",t:"뉴욕 승"}],
+        handicap:[{k:"home",t:"보스턴 -1.5"},{k:"line",t:"핸디캡 기준점",sub:"-1.5 / +1.5",fixed:true},{k:"away",t:"뉴욕 +1.5"}],
+        ou:[{k:"under",t:"5.5 언더"},{k:"line",t:"언더·오버 기준점",sub:"5.5",fixed:true},{k:"over",t:"5.5 오버"}] } }
   ];
   const PAST_HISTORY = [
     { date:"9월 17일", league:"K리그1", home:"전북 현대", away:"강원 FC", hs:2, as:1,
