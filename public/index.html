@@ -1129,9 +1129,36 @@
 
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="toast-text">저장되었습니다</span></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   "use strict";
+
+  // ===================== Supabase 연동 =====================
+  // /api/config (Vercel 환경변수 SUPABASE_URL / SUPABASE_ANON_KEY 기반)에서
+  // 공개 설정값을 받아와 Supabase 클라이언트를 초기화합니다.
+  // 회원 로그인, 예측 저장, 게시판/댓글 등 실제 기능은 이 클라이언트(window.psSupabase)
+  // 준비가 끝나야 붙일 수 있습니다. 아직 설정이 안 되어 있으면 조용히 건너뜁니다.
+  window.psSupabase = null;
+  (async function initSupabase(){
+    try {
+      const res = await fetch("/api/config");
+      if (!res.ok) return;
+      const cfg = await res.json();
+      if (!cfg.configured || !cfg.supabaseUrl || !cfg.supabaseAnonKey) {
+        console.info("[PulseScore] Supabase 환경변수가 아직 설정되지 않았습니다. (Vercel > Settings > Environment Variables)");
+        return;
+      }
+      if (!window.supabase || !window.supabase.createClient) {
+        console.warn("[PulseScore] supabase-js 라이브러리를 불러오지 못했습니다.");
+        return;
+      }
+      window.psSupabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+      console.info("[PulseScore] Supabase 연결 완료");
+    } catch (err) {
+      console.warn("[PulseScore] Supabase 초기화 실패:", err);
+    }
+  })();
 
   const CRESTS = {
     "FC 서울": {bg:"#B6332C", label:"S"}, "울산 HD": {bg:"#1B4FA0", label:"U"},
