@@ -1959,7 +1959,6 @@
   let selectedMatchId = null;
   const picks = {};
   let savedPredictions = [];
-  try{ savedPredictions = JSON.parse(localStorage.getItem("pulsescore_predictions") || "[]"); }catch(e){ savedPredictions = []; }
 
   const matchlistEl = document.getElementById("matchlist");
   const predictpanelEl = document.getElementById("predictpanel");
@@ -2066,14 +2065,75 @@
     showToast._tm = setTimeout(() => t.classList.remove("show"), 2200);
   }
 
-  function savePrediction(match, p){
+  async function savePrediction(match, p){
     if(match.status === "진행중"){ showToast("이미 시작된 경기는 예측을 저장할 수 없어요"); return; }
     const hasAny = GROUP_ORDER.some(g => p[g]);
     if(!hasAny){ showToast("예측 항목을 하나 이상 선택하세요"); return; }
+    if(!window.psCurrentUser){
+      showToast("예측 저장은 로그인 후 이용할 수 있어요");
+      document.getElementById("loginbtn").click();
+      return;
+    }
+    const picksCopy = {...p};
+    const prevList = savedPredictions;
     savedPredictions = savedPredictions.filter(sp => sp.matchId !== match.id);
-    savedPredictions.unshift({ matchId: match.id, savedAt: Date.now(), picks: {...p} });
-    try{ localStorage.setItem("pulsescore_predictions", JSON.stringify(savedPredictions)); }catch(e){}
+    savedPredictions.unshift({ matchId: match.id, savedAt: Date.now(), picks: picksCopy });
+    renderHistory();
     showToast("예측 기록이 저장되었습니다");
+    try{
+      if(!window.psSupabase) throw new Error("Supabase 연동이 준비되지 않았습니다");
+      const { error } = await window.psSupabase.from("predictions")
+        .upsert(
+          { user_id: window.psCurrentUser.id, match_id: match.id, picks: picksCopy, saved_at: new Date().toISOString() },
+          { onConflict: "user_id,match_id" }
+        );
+      if(error) throw error;
+    }catch(err){
+      console.warn("[PulseScore] 예측 저장 실패:", err);
+      savedPredictions = prevList;
+      renderHistory();
+      showToast(err.message || "예측 저장에 실패했습니다");
+    }
+  }
+
+  async function deletePrediction(matchId){
+    const prevList = savedPredictions;
+    savedPredictions = savedPredictions.filter(sp => sp.matchId !== matchId);
+    renderHistory();
+    showToast("예측 기록이 삭제되었습니다");
+    try{
+      if(!window.psCurrentUser || !window.psSupabase) throw new Error("Supabase 연동이 준비되지 않았습니다");
+      const { error } = await window.psSupabase.from("predictions").delete()
+        .eq("user_id", window.psCurrentUser.id).eq("match_id", matchId);
+      if(error) throw error;
+    }catch(err){
+      console.warn("[PulseScore] 예측 삭제 실패:", err);
+      savedPredictions = prevList;
+      renderHistory();
+      showToast(err.message || "예측 삭제에 실패했습니다");
+    }
+  }
+
+  async function loadPredictionsFromSupabase(){
+    if(!window.psSupabase || !window.psCurrentUser) return;
+    try{
+      const { data, error } = await window.psSupabase
+        .from("predictions")
+        .select("match_id, picks, saved_at")
+        .eq("user_id", window.psCurrentUser.id);
+      if(error) throw error;
+      savedPredictions = (data || [])
+        .map((row) => ({
+          matchId: row.match_id,
+          savedAt: row.saved_at ? new Date(row.saved_at).getTime() : Date.now(),
+          picks: row.picks || {},
+        }))
+        .sort((a, b) => b.savedAt - a.savedAt);
+      renderHistory();
+    }catch(err){ console.warn("[PulseScore] 예측 기록 불러오기 실패:", err); }
+  }
+  function clearLocalPredictions(){
+    savedPredictions = [];
     renderHistory();
   }
 
@@ -2092,11 +2152,7 @@
     historybodyEl.innerHTML = pendingRows + pastRows;
     historybodyEl.querySelectorAll("[data-delpred]").forEach(btn => {
       btn.addEventListener("click", () => {
-        const matchId = btn.getAttribute("data-delpred");
-        savedPredictions = savedPredictions.filter(sp => sp.matchId !== matchId);
-        try{ localStorage.setItem("pulsescore_predictions", JSON.stringify(savedPredictions)); }catch(e){}
-        renderHistory();
-        showToast("예측 기록이 삭제되었습니다");
+        deletePrediction(btn.getAttribute("data-delpred"));
       });
     });
   }
@@ -2837,6 +2893,7 @@
     window.psCurrentUser = null;
     applyMemberUI();
     clearLocalBookmarks();
+    clearLocalPredictions();
     document.getElementById("accountmodal").classList.remove("show");
     showToast("로그아웃되었습니다");
   });
@@ -2954,6 +3011,7 @@
           window.psCurrentUser = data.user || null;
           applyMemberUI();
           loadBookmarksFromSupabase();
+          loadPredictionsFromSupabase();
           document.getElementById("loginmodal").classList.remove("show");
           showToast("가입 완료! 회원으로 로그인되었습니다");
         }
@@ -2963,6 +3021,7 @@
         window.psCurrentUser = data.user || null;
         applyMemberUI();
         loadBookmarksFromSupabase();
+        loadPredictionsFromSupabase();
         document.getElementById("loginmodal").classList.remove("show");
         showToast("회원으로 로그인되었습니다");
       }
@@ -2988,6 +3047,7 @@
             window.psCurrentUser = data.session.user;
             applyMemberUI();
             loadBookmarksFromSupabase();
+            loadPredictionsFromSupabase();
           }
         }).catch(()=>{});
       } else if(tries > 20){
