@@ -1096,8 +1096,13 @@
         <button class="sportcard" data-logintype="admin">관리자 로그인</button>
       </div>
       <input type="text" id="login-id-input" placeholder="아이디 또는 이메일">
+      <input type="text" id="login-nickname-input" placeholder="닉네임" style="display:none">
       <input type="password" id="login-pw-input" placeholder="비밀번호">
-      <div class="write-charcount" style="text-align:left">데모용 화면이라 아이디·비밀번호를 입력하면 그대로 로그인됩니다.</div>
+      <input type="password" id="login-pw2-input" placeholder="비밀번호 확인" style="display:none">
+      <div class="write-charcount" id="login-helper-text" style="text-align:left">데모용 화면이라 아이디·비밀번호를 입력하면 그대로 로그인됩니다.</div>
+      <div id="login-authtoggle-row" style="text-align:right;margin-top:2px">
+        <button type="button" id="login-authtoggle" style="background:none;border:none;color:var(--accent);font-size:12.5px;font-weight:700;padding:4px 2px">회원가입</button>
+      </div>
     </div>
     <div class="writemodal-foot"><button id="login-submit" disabled>로그인</button></div>
   </div>
@@ -2666,38 +2671,154 @@
     showToast(isAdmin ? "관리자 모드로 전환되었습니다 (데모용)" : "일반 회원 화면으로 전환되었습니다");
   });
 
-  // ===================== 로그인 / 고객센터 문의 =====================
+  // ===================== 로그인 / 회원가입 / 고객센터 문의 =====================
+  // 회원(member) 탭은 Supabase Auth(이메일+비밀번호)로 실제 계정을 만들고
+  // 로그인합니다. 관리자(admin) 탭은 기존처럼 데모 전환 방식을 유지합니다.
   let loginType = "member";
+  let authMode = "signin"; // "signin" | "signup" (member 탭에서만 의미 있음)
+  window.psCurrentUser = null;
+
+  function renderLoginModal(){
+    const isMember = loginType === "member";
+    const isSignup = isMember && authMode === "signup";
+    document.getElementById("login-id-input").placeholder = isMember ? "이메일" : "아이디 또는 이메일";
+    document.getElementById("login-nickname-input").style.display = isSignup ? "" : "none";
+    document.getElementById("login-pw2-input").style.display = isSignup ? "" : "none";
+    document.getElementById("login-authtoggle-row").style.display = isMember ? "" : "none";
+    document.getElementById("login-authtoggle").textContent = isSignup ? "이미 계정이 있으신가요? 로그인" : "회원가입";
+    document.getElementById("login-submit").textContent = isSignup ? "가입하기" : "로그인";
+    const helper = document.getElementById("login-helper-text");
+    if(!isMember){
+      helper.textContent = "데모용 화면이라 아이디·비밀번호를 입력하면 그대로 로그인됩니다.";
+    } else if(!window.psSupabase){
+      helper.textContent = "Supabase 연동 준비 중입니다. 잠시 후 다시 시도해주세요.";
+    } else if(isSignup){
+      helper.textContent = "이메일과 비밀번호(6자 이상)로 계정을 만듭니다.";
+    } else {
+      helper.textContent = "이메일과 비밀번호로 로그인합니다.";
+    }
+  }
+
   document.getElementById("loginbtn").addEventListener("click", () => {
     document.getElementById("login-id-input").value = "";
+    document.getElementById("login-nickname-input").value = "";
     document.getElementById("login-pw-input").value = "";
+    document.getElementById("login-pw2-input").value = "";
     document.getElementById("login-submit").disabled = true;
     loginType = "member";
+    authMode = "signin";
     document.querySelectorAll("#login-subtabs button").forEach(b => b.classList.toggle("active", b.getAttribute("data-logintype") === "member"));
+    renderLoginModal();
     document.getElementById("loginmodal").classList.add("show");
   });
   document.getElementById("login-subtabs").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-logintype]");
     if(!btn) return;
     loginType = btn.getAttribute("data-logintype");
+    authMode = "signin";
     document.querySelectorAll("#login-subtabs button").forEach(b => b.classList.toggle("active", b === btn));
+    renderLoginModal();
+    checkLoginValid();
+  });
+  document.getElementById("login-authtoggle").addEventListener("click", () => {
+    authMode = authMode === "signin" ? "signup" : "signin";
+    renderLoginModal();
+    checkLoginValid();
   });
   function checkLoginValid(){
     const id = document.getElementById("login-id-input").value.trim();
     const pw = document.getElementById("login-pw-input").value.trim();
-    document.getElementById("login-submit").disabled = !(id && pw);
+    const isSignup = loginType === "member" && authMode === "signup";
+    if(!isSignup){
+      document.getElementById("login-submit").disabled = !(id && pw);
+      return;
+    }
+    const pw2 = document.getElementById("login-pw2-input").value.trim();
+    document.getElementById("login-submit").disabled = !(id && pw && pw2 && pw === pw2 && pw.length >= 6);
   }
   document.getElementById("login-id-input").addEventListener("input", checkLoginValid);
   document.getElementById("login-pw-input").addEventListener("input", checkLoginValid);
+  document.getElementById("login-pw2-input").addEventListener("input", checkLoginValid);
   document.getElementById("login-close").addEventListener("click", () => document.getElementById("loginmodal").classList.remove("show"));
   document.getElementById("loginmodal").addEventListener("click", (e) => { if(e.target.id === "loginmodal") document.getElementById("loginmodal").classList.remove("show"); });
-  document.getElementById("login-submit").addEventListener("click", () => {
-    isAdmin = (loginType === "admin");
-    try{ localStorage.setItem("pulsescore_admin", isAdmin ? "1" : "0"); }catch(e){}
-    applyAdminUI();
-    document.getElementById("loginmodal").classList.remove("show");
-    showToast(isAdmin ? "관리자로 로그인되었습니다" : "회원으로 로그인되었습니다");
+
+  document.getElementById("login-submit").addEventListener("click", async () => {
+    // ---- 관리자 탭: 기존 데모 전환 그대로 유지 ----
+    if(loginType === "admin"){
+      isAdmin = true;
+      try{ localStorage.setItem("pulsescore_admin", "1"); }catch(e){}
+      applyAdminUI();
+      document.getElementById("loginmodal").classList.remove("show");
+      showToast("관리자로 로그인되었습니다");
+      return;
+    }
+
+    // ---- 회원 탭: Supabase Auth ----
+    const email = document.getElementById("login-id-input").value.trim();
+    const password = document.getElementById("login-pw-input").value.trim();
+    const nickname = document.getElementById("login-nickname-input").value.trim();
+    const isSignup = authMode === "signup";
+
+    if(!window.psSupabase){
+      showToast("Supabase 연동이 아직 준비되지 않았습니다");
+      return;
+    }
+
+    const submitBtn = document.getElementById("login-submit");
+    submitBtn.disabled = true;
+    const prevLabel = submitBtn.textContent;
+    submitBtn.textContent = "처리 중...";
+
+    try{
+      if(isSignup){
+        const { data, error } = await window.psSupabase.auth.signUp({
+          email,
+          password,
+          options: nickname ? { data: { nickname } } : undefined
+        });
+        if(error) throw error;
+        if(data && data.user && !data.session){
+          showToast("가입 확인 메일을 보냈어요. 메일함을 확인해주세요.");
+          document.getElementById("loginmodal").classList.remove("show");
+        } else {
+          window.psCurrentUser = data.user || null;
+          document.getElementById("loginmodal").classList.remove("show");
+          showToast("가입 완료! 회원으로 로그인되었습니다");
+        }
+      } else {
+        const { data, error } = await window.psSupabase.auth.signInWithPassword({ email, password });
+        if(error) throw error;
+        window.psCurrentUser = data.user || null;
+        document.getElementById("loginmodal").classList.remove("show");
+        showToast("회원으로 로그인되었습니다");
+      }
+    } catch(err){
+      console.warn("[PulseScore] 인증 실패:", err);
+      const msg = (err && err.message) ? err.message : "요청을 처리하지 못했습니다";
+      showToast(msg.includes("Invalid login credentials") ? "아이디 또는 비밀번호가 올바르지 않습니다" : msg);
+    } finally {
+      submitBtn.textContent = prevLabel;
+      checkLoginValid();
+    }
   });
+
+  // 이미 로그인된 세션이 있으면 복원 (Supabase 클라이언트는 비동기로 준비되므로 지연 확인)
+  (function restoreSupabaseSession(){
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries++;
+      if(window.psSupabase){
+        clearInterval(timer);
+        window.psSupabase.auth.getSession().then(({ data }) => {
+          if(data && data.session && data.session.user){
+            window.psCurrentUser = data.session.user;
+          }
+        }).catch(()=>{});
+      } else if(tries > 20){
+        clearInterval(timer);
+      }
+    }, 250);
+  })();
 
   function openSupportModal(){
     document.getElementById("support-type-input").value = "일반 문의";
