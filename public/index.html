@@ -1523,11 +1523,29 @@
     }
   }
 
-  // ---------- SUPER BANNER ----------
+  // ---------- SUPER BANNER (Supabase에 실제 저장, 관리자만 수정 가능) ----------
   const BANNER_SLOTS = 5;
-  let banners = [];
-  try{ banners = JSON.parse(localStorage.getItem("pulsescore_banners") || "[]"); }catch(e){ banners = []; }
-  while(banners.length < BANNER_SLOTS) banners.push(null);
+  let banners = new Array(BANNER_SLOTS).fill(null);
+
+  async function fetchBanners(){
+    if(!window.psSupabase) return;
+    try{
+      const { data, error } = await window.psSupabase
+        .from("banners")
+        .select("slot, image")
+        .order("slot", { ascending: true });
+      if(error) throw error;
+      const next = new Array(BANNER_SLOTS).fill(null);
+      (data || []).forEach((row) => {
+        if(row.slot >= 0 && row.slot < BANNER_SLOTS) next[row.slot] = row.image || null;
+      });
+      banners = next;
+      renderBannerCarousel();
+      if(document.getElementById("banneradmin").classList.contains("show")) renderBannerAdmin();
+    }catch(err){
+      console.warn("[PulseScore] 배너 불러오기 실패:", err);
+    }
+  }
 
   const BANNER_FALLBACKS = [
     { grad:"linear-gradient(135deg,#124436,#0A1613)", title:"펄스스코어 프리미엄", sub:"모든 리그의 심화 분석을 한곳에서" },
@@ -1580,6 +1598,12 @@
         const idx = Number(inp.getAttribute("data-fileslot"));
         const file = e.target.files[0];
         if(!file) return;
+        const MAX_BYTES = 2 * 1024 * 1024;
+        if(file.size > MAX_BYTES){
+          showToast("사진 용량은 최대 2MB까지 첨부할 수 있습니다");
+          e.target.value = "";
+          return;
+        }
         const reader = new FileReader();
         reader.onload = () => { banners[idx] = reader.result; renderBannerAdmin(); updateBannerReadyStatus(); };
         reader.readAsDataURL(file);
@@ -1604,12 +1628,26 @@
     panel.classList.toggle("show");
     if(panel.classList.contains("show")) renderBannerAdmin();
   });
-  document.getElementById("bannerregister").addEventListener("click", () => {
-    try{ localStorage.setItem("pulsescore_banners", JSON.stringify(banners)); }catch(e){}
-    bannerIdx = 0;
-    renderBannerCarousel();
-    resetBannerTimer();
-    showToast("배너가 등록되었습니다");
+  document.getElementById("bannerregister").addEventListener("click", async () => {
+    const btn = document.getElementById("bannerregister");
+    btn.disabled = true;
+    try{
+      for(let slot = 0; slot < BANNER_SLOTS; slot++){
+        await adminFetch("/api/admin/banners", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slot, image: banners[slot] || null }),
+        });
+      }
+      bannerIdx = 0;
+      renderBannerCarousel();
+      resetBannerTimer();
+      showToast("배너가 등록되었습니다");
+    }catch(err){
+      showToast(err.message || "배너 등록에 실패했습니다");
+    }finally{
+      btn.disabled = false;
+    }
   });
 
   renderBannerCarousel();
@@ -3141,6 +3179,7 @@
       tries++;
       if(window.psSupabase){
         clearInterval(timer);
+        fetchBanners(); // 배너는 로그인 여부와 상관없이 모두에게 보여야 하므로 별도로 불러옵니다.
         window.psSupabase.auth.getSession().then(({ data }) => {
           if(data && data.session && data.session.user){
             window.psCurrentUser = data.session.user;
