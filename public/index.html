@@ -1388,9 +1388,22 @@
   renderBannerCarousel();
   resetBannerTimer();
 
+  let searchQuery = "";
+  let leaguepickExpanded = false;
+
+  function matchesSearch(g, m, q){
+    if(!q) return true;
+    return g.name.toLowerCase().includes(q) || m.home.toLowerCase().includes(q) || m.away.toLowerCase().includes(q);
+  }
+
   function renderScoresPage(){
     const wrap = document.getElementById("leaguegroups");
-    const groups = LEAGUES.filter(g => (currentLiveSport === "all" || g.sport === currentLiveSport) && (currentLeagueFilter === "all" || g.id === currentLeagueFilter));
+    const q = searchQuery.trim().toLowerCase();
+    const groups = LEAGUES
+      .filter(g => (currentLiveSport === "all" || g.sport === currentLiveSport) && (currentLeagueFilter === "all" || g.id === currentLeagueFilter))
+      .map(g => ({ ...g, matches: g.matches.filter(m => matchesSearch(g, m, q)) }))
+      .filter(g => g.matches.length > 0);
+
     let liveN = 0;
     LEAGUES.forEach(g => g.matches.forEach(m => { if(m.status === "live") liveN++; }));
     document.getElementById("livecount-n").textContent = liveN;
@@ -1402,7 +1415,7 @@
           ${g.matches.map(m => scoreRowHtml(g, m)).join("")}
         </div>
       </div>
-    `).join("") || `<div class="panel emptypanel"><span>선택한 종목의 경기가 없습니다.</span></div>`;
+    `).join("") || `<div class="panel emptypanel"><span>${q ? `"${searchQuery}"에 대한 검색 결과가 없습니다.` : "선택한 종목의 경기가 없습니다."}</span></div>`;
 
     wrap.querySelectorAll(".scorerow").forEach(row => {
       row.addEventListener("click", (e) => {
@@ -1437,7 +1450,7 @@
   function renderLeaguePick(){
     const el = document.getElementById("leaguepick");
     if(!el) return;
-    const q = (document.getElementById("leaguesearch").value || "").trim().toLowerCase();
+    const q = searchQuery.trim().toLowerCase();
     // 검색어가 종목 이름(축구/야구/농구/배구/테니스)과 일치하면 해당 종목 전체를 보여줍니다.
     const matchedSportKey = q ? Object.keys(SPORT_LABELS).find(key => SPORT_LABELS[key].includes(q)) : null;
 
@@ -1445,29 +1458,25 @@
       if(currentLiveSport !== "all" && g.sport !== currentLiveSport) return false;
       if(!q) return true;
       if(matchedSportKey) return g.sport === matchedSportKey;
-      return g.name.toLowerCase().includes(q);
+      return g.name.toLowerCase().includes(q) || g.matches.some(m => m.home.toLowerCase().includes(q) || m.away.toLowerCase().includes(q));
     });
 
     const allCount = filtered.reduce((s,g) => s + g.matches.length, 0);
-    let bodyHtml = `<button class="${currentLeagueFilter === 'all' ? 'active':''}" data-league="all"><span>전체 리그</span><span class="cnt">${allCount}</span></button>`;
-
-    if(currentLiveSport === "all"){
-      // 종목별로 묶어서 헤더와 함께 보여줍니다. (많은 리그를 한눈에 찾기 쉽도록)
-      SPORT_ORDER.forEach(sportKey => {
-        const group = filtered.filter(g => g.sport === sportKey).sort((a,b) => b.matches.length - a.matches.length);
-        if(group.length === 0) return;
-        bodyHtml += `<div class="leaguepick-sporthead">${sportEmoji(sportKey)} ${SPORT_LABELS[sportKey]} <span>${group.length}</span></div>`;
-        bodyHtml += group.map(leagueBtnHtml).join("");
-      });
-      if(filtered.length === 0){
-        bodyHtml += `<div class="favempty">검색 결과가 없습니다.</div>`;
-      }
-    } else {
-      const sorted = [...filtered].sort((a,b) => b.matches.length - a.matches.length);
+    const sorted = [...filtered].sort((a,b) => b.matches.length - a.matches.length);
+    const expanded = leaguepickExpanded || !!q; // 검색 중일 땐 항상 펼쳐서 보여줍니다.
+    const chevron = expanded ? "▾" : "▸";
+    let bodyHtml = `<button class="${currentLeagueFilter === 'all' ? 'active':''}" data-toggle="1"><span>${chevron} 전체 리그</span><span class="cnt">${allCount}</span></button>`;
+    if(expanded){
       bodyHtml += sorted.map(leagueBtnHtml).join("") || `<div class="favempty">검색 결과가 없습니다.</div>`;
     }
 
     el.innerHTML = bodyHtml;
+    const toggleBtn = el.querySelector('[data-toggle="1"]');
+    if(toggleBtn) toggleBtn.addEventListener("click", () => {
+      leaguepickExpanded = !leaguepickExpanded;
+      currentLeagueFilter = "all";
+      renderScoresPage();
+    });
     el.querySelectorAll("button[data-league]").forEach(btn => {
       btn.addEventListener("click", () => {
         currentLeagueFilter = btn.getAttribute("data-league");
@@ -1588,7 +1597,10 @@
     const watchBtn = document.getElementById("spotlight-watch");
     if(watchBtn) watchBtn.addEventListener("click", () => openDiscussModal(target.id));
   }
-  document.getElementById("leaguesearch").addEventListener("input", renderLeaguePick);
+  document.getElementById("leaguesearch").addEventListener("input", (e) => {
+    searchQuery = e.target.value;
+    renderScoresPage();
+  });
 
   function scoreRowHtml(league, m){
     let statusHtml = "";
