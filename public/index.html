@@ -1116,7 +1116,7 @@
       </div>
       <input type="text" id="login-id-input" placeholder="아이디 또는 이메일">
       <input type="text" id="login-nickname-input" placeholder="닉네임" style="display:none">
-      <input type="tel" id="login-phone-input" placeholder="전화번호 (선택, 인증 없음)" style="display:none">
+      <input type="tel" id="login-phone-input" placeholder="전화번호" style="display:none">
       <input type="password" id="login-pw-input" placeholder="비밀번호">
       <input type="password" id="login-pw2-input" placeholder="비밀번호 확인" style="display:none">
       <div class="write-charcount" id="login-helper-text" style="text-align:left">데모용 화면이라 아이디·비밀번호를 입력하면 그대로 로그인됩니다.</div>
@@ -1138,8 +1138,7 @@
     <div class="writemodal-body">
       <div class="write-charcount" style="text-align:left;font-size:12.5px" id="account-email-label">-</div>
       <input type="text" id="account-nickname-input" placeholder="닉네임" maxlength="20">
-      <input type="tel" id="account-phone-input" placeholder="전화번호 (선택, 인증 없음)">
-      <div class="write-charcount" style="text-align:left" id="account-status-text">닉네임/전화번호를 바꾸고 저장을 눌러주세요.</div>
+      <div class="write-charcount" style="text-align:left" id="account-status-text">닉네임을 바꾸고 저장을 눌러주세요.</div>
     </div>
     <div class="writemodal-foot" style="justify-content:space-between">
       <button type="button" id="account-logout" style="background:none;border:1px solid var(--line);color:var(--text-dim);font-weight:600;font-size:13px;padding:9px 16px;border-radius:999px">로그아웃</button>
@@ -2764,24 +2763,21 @@
   }
   function openAccountModal(){
     if(!window.psCurrentUser) return;
-    const meta = window.psCurrentUser.user_metadata || {};
     document.getElementById("account-email-label").textContent = window.psCurrentUser.email || "";
     document.getElementById("account-nickname-input").value = memberDisplayName(window.psCurrentUser);
-    document.getElementById("account-phone-input").value = meta.phone_number || "";
-    document.getElementById("account-status-text").textContent = "닉네임/전화번호를 바꾸고 저장을 눌러주세요.";
+    document.getElementById("account-status-text").textContent = "닉네임을 바꾸고 저장을 눌러주세요.";
     document.getElementById("accountmodal").classList.add("show");
   }
   document.getElementById("account-close").addEventListener("click", () => document.getElementById("accountmodal").classList.remove("show"));
   document.getElementById("accountmodal").addEventListener("click", (e) => { if(e.target.id === "accountmodal") document.getElementById("accountmodal").classList.remove("show"); });
   document.getElementById("account-save").addEventListener("click", async () => {
     const nickname = document.getElementById("account-nickname-input").value.trim();
-    const phone = document.getElementById("account-phone-input").value.trim();
     if(!nickname){ showToast("닉네임을 입력해주세요"); return; }
     if(!window.psSupabase){ showToast("Supabase 연동이 준비되지 않았습니다"); return; }
     const btn = document.getElementById("account-save");
     btn.disabled = true;
     try{
-      const { data, error } = await window.psSupabase.auth.updateUser({ data: { nickname, phone_number: phone || null } });
+      const { data, error } = await window.psSupabase.auth.updateUser({ data: { nickname } });
       if(error) throw error;
       window.psCurrentUser = data.user || window.psCurrentUser;
       applyMemberUI();
