@@ -1173,7 +1173,7 @@
       { id:"V1", home:"대한항공", away:"현대캐피탈", status:"live", clock:"3세트", hs:2, as:1 },
       { id:"V2", home:"OK저축은행", away:"우리카드", status:"upcoming", time:"19:00" }
     ]},
-    { id:"atp", sport:"tennis", flag:"🌍", name:"ATP 투어", matches:[
+    { id:"atp", sport:"tennis", flag:"🎾", name:"ATP 투어", matches:[
       { id:"T1", home:"정현", away:"카를로스 알카라스", status:"live", clock:"2세트 4:3", hs:1, as:1 },
       { id:"T2", home:"권순우", away:"다닐 메드베데프", status:"upcoming", time:"21:00" }
     ]}
@@ -1193,6 +1193,10 @@
     if (["FT", "AET", "PEN", "AOT", "FINAL", "F"].includes(s)) return "finished";
     if (!s) return "upcoming";
     return "live";
+  }
+
+  function sportEmoji(sport){
+    return { soccer:"⚽", baseball:"⚾", basketball:"🏀", volleyball:"🏐", tennis:"🎾" }[sport] || "🏆";
   }
 
   function realMatchesToLeagueGroups(sport, matches) {
@@ -1219,7 +1223,7 @@
         byLeague.set(leagueName, {
           id: "real-" + sport + "-" + leagueName,
           sport,
-          flag: "🌍",
+          flag: sportEmoji(sport),
           name: leagueName,
           leagueLogo: m.leagueLogo || null,
           matches: [],
