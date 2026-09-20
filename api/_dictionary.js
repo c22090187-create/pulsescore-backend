@@ -98,4 +98,4 @@ function toKorean(name) {
   return KO_NAMES[name] || name;
 }
 
-module.exports = { toKorean };
+module.exports = { toKorean, KO_NAMES };

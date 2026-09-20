@@ -15,7 +15,8 @@
 
 const { callApiSports } = require("./_apisports");
 const { getCache, setCache } = require("./_cache");
-const { toKorean } = require("./_dictionary");
+const { toKorean, KO_NAMES } = require("./_dictionary");
+const { translateBatch } = require("./_translate");
 
 const SUPPORTED_SPORTS = ["soccer", "baseball", "basketball", "volleyball"];
 const CACHE_TTL_SECONDS = 30; // 라이브 경기는 30초 정도면 충분히 자주 갱신됩니다.
@@ -56,15 +57,25 @@ function normalizeGeneric(raw) {
   }));
 }
 
-// 경기 배열에 등장하는 리그명·팀명 중, 사전(_dictionary.js)에 있는 유명
-// 리그·구단은 한글 이름을 붙여줍니다. 사전에 없는 이름은 원문(영어)이
-// 그대로 Ko 필드에 들어갑니다. (외부 API 호출 없이 즉시 동작합니다)
-function attachKoreanNames(matches) {
+// 경기 배열에 등장하는 리그명·팀명에 한글 이름을 붙여줍니다.
+//   1순위: 사전(_dictionary.js)에 있는 유명 리그·구단 → 즉시, 무제한, 무료
+//   2순위: 사전에 없는 이름 → MyMemory 번역 API로 보충 (가입/카드 불필요, 30일 캐시)
+// 두 방법 다 실패해도 원문(영어)이 그대로 표시되어 화면이 깨지지 않습니다.
+async function attachKoreanNames(matches) {
+  const needsTranslation = new Set();
+  matches.forEach((m) => {
+    [m.league, m.home, m.away].forEach((name) => {
+      if (name && !KO_NAMES[name]) needsTranslation.add(name);
+    });
+  });
+
+  const translations = await translateBatch(Array.from(needsTranslation));
+
   return matches.map((m) => ({
     ...m,
-    leagueKo: toKorean(m.league),
-    homeKo: toKorean(m.home),
-    awayKo: toKorean(m.away),
+    leagueKo: KO_NAMES[m.league] || translations[m.league] || m.league,
+    homeKo: KO_NAMES[m.home] || translations[m.home] || m.home,
+    awayKo: KO_NAMES[m.away] || translations[m.away] || m.away,
   }));
 }
 
