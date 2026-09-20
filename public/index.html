@@ -1116,6 +1116,7 @@
       </div>
       <input type="text" id="login-id-input" placeholder="아이디 또는 이메일">
       <input type="text" id="login-nickname-input" placeholder="닉네임" style="display:none">
+      <input type="tel" id="login-phone-input" placeholder="전화번호 (선택, 인증 없음)" style="display:none">
       <input type="password" id="login-pw-input" placeholder="비밀번호">
       <input type="password" id="login-pw2-input" placeholder="비밀번호 확인" style="display:none">
       <div class="write-charcount" id="login-helper-text" style="text-align:left">데모용 화면이라 아이디·비밀번호를 입력하면 그대로 로그인됩니다.</div>
@@ -1137,7 +1138,8 @@
     <div class="writemodal-body">
       <div class="write-charcount" style="text-align:left;font-size:12.5px" id="account-email-label">-</div>
       <input type="text" id="account-nickname-input" placeholder="닉네임" maxlength="20">
-      <div class="write-charcount" style="text-align:left" id="account-status-text">닉네임을 바꾸고 저장을 눌러주세요.</div>
+      <input type="tel" id="account-phone-input" placeholder="전화번호 (선택, 인증 없음)">
+      <div class="write-charcount" style="text-align:left" id="account-status-text">닉네임/전화번호를 바꾸고 저장을 눌러주세요.</div>
     </div>
     <div class="writemodal-foot" style="justify-content:space-between">
       <button type="button" id="account-logout" style="background:none;border:1px solid var(--line);color:var(--text-dim);font-weight:600;font-size:13px;padding:9px 16px;border-radius:999px">로그아웃</button>
@@ -2730,6 +2732,7 @@
     const isSignup = isMember && authMode === "signup";
     document.getElementById("login-id-input").placeholder = isMember ? "이메일" : "아이디 또는 이메일";
     document.getElementById("login-nickname-input").style.display = isSignup ? "" : "none";
+    document.getElementById("login-phone-input").style.display = isSignup ? "" : "none";
     document.getElementById("login-pw2-input").style.display = isSignup ? "" : "none";
     document.getElementById("login-authtoggle-row").style.display = isMember ? "" : "none";
     document.getElementById("login-authtoggle").textContent = isSignup ? "이미 계정이 있으신가요? 로그인" : "회원가입";
@@ -2761,25 +2764,28 @@
   }
   function openAccountModal(){
     if(!window.psCurrentUser) return;
+    const meta = window.psCurrentUser.user_metadata || {};
     document.getElementById("account-email-label").textContent = window.psCurrentUser.email || "";
     document.getElementById("account-nickname-input").value = memberDisplayName(window.psCurrentUser);
-    document.getElementById("account-status-text").textContent = "닉네임을 바꾸고 저장을 눌러주세요.";
+    document.getElementById("account-phone-input").value = meta.phone_number || "";
+    document.getElementById("account-status-text").textContent = "닉네임/전화번호를 바꾸고 저장을 눌러주세요.";
     document.getElementById("accountmodal").classList.add("show");
   }
   document.getElementById("account-close").addEventListener("click", () => document.getElementById("accountmodal").classList.remove("show"));
   document.getElementById("accountmodal").addEventListener("click", (e) => { if(e.target.id === "accountmodal") document.getElementById("accountmodal").classList.remove("show"); });
   document.getElementById("account-save").addEventListener("click", async () => {
     const nickname = document.getElementById("account-nickname-input").value.trim();
+    const phone = document.getElementById("account-phone-input").value.trim();
     if(!nickname){ showToast("닉네임을 입력해주세요"); return; }
     if(!window.psSupabase){ showToast("Supabase 연동이 준비되지 않았습니다"); return; }
     const btn = document.getElementById("account-save");
     btn.disabled = true;
     try{
-      const { data, error } = await window.psSupabase.auth.updateUser({ data: { nickname } });
+      const { data, error } = await window.psSupabase.auth.updateUser({ data: { nickname, phone_number: phone || null } });
       if(error) throw error;
       window.psCurrentUser = data.user || window.psCurrentUser;
       applyMemberUI();
-      showToast("닉네임을 저장했습니다");
+      showToast("저장했습니다");
       document.getElementById("accountmodal").classList.remove("show");
     }catch(err){
       showToast(err.message || "저장하지 못했습니다");
@@ -2804,6 +2810,7 @@
     }
     document.getElementById("login-id-input").value = "";
     document.getElementById("login-nickname-input").value = "";
+    document.getElementById("login-phone-input").value = "";
     document.getElementById("login-pw-input").value = "";
     document.getElementById("login-pw2-input").value = "";
     document.getElementById("login-submit").disabled = true;
@@ -2878,6 +2885,7 @@
     const email = document.getElementById("login-id-input").value.trim();
     const password = document.getElementById("login-pw-input").value.trim();
     const nickname = document.getElementById("login-nickname-input").value.trim();
+    const phone = document.getElementById("login-phone-input").value.trim();
     const isSignup = authMode === "signup";
 
     if(!window.psSupabase){
@@ -2892,10 +2900,13 @@
 
     try{
       if(isSignup){
+        const meta = {};
+        if(nickname) meta.nickname = nickname;
+        if(phone) meta.phone_number = phone; // 실제 전화번호 인증(OTP)은 하지 않고, 참고용으로만 저장합니다.
         const { data, error } = await window.psSupabase.auth.signUp({
           email,
           password,
-          options: nickname ? { data: { nickname } } : undefined
+          options: Object.keys(meta).length ? { data: meta } : undefined
         });
         if(error) throw error;
         if(data && data.user && !data.session){
@@ -2984,6 +2995,7 @@
           <div style="font-weight:700">${escapeHtml(m.email || "-")}</div>
           ${m.nickname ? `<div style="font-size:11.5px;color:var(--text-faint)">${escapeHtml(m.nickname)}</div>` : ""}
         </td>
+        <td style="white-space:nowrap;font-size:12.5px;color:var(--text-dim)">${escapeHtml(m.phone || "-")}</td>
         <td style="white-space:nowrap;font-size:12.5px;color:var(--text-dim)">${formatDateTime(m.createdAt)}</td>
         <td style="white-space:nowrap;font-size:12.5px">${m.emailConfirmed ? '<span class="chip ok">인증됨</span>' : '<span class="chip pending">미인증</span>'}</td>
         <td style="text-align:right">
@@ -2995,7 +3007,7 @@
     body.innerHTML = `
       <div class="htable">
         <table>
-          <thead><tr><th>회원</th><th>가입일</th><th>이메일 인증</th><th></th></tr></thead>
+          <thead><tr><th>회원</th><th>전화번호</th><th>가입일</th><th>이메일 인증</th><th></th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>`;
