@@ -2709,7 +2709,7 @@
             ${p.photo
               ? `<div style="position:absolute;inset:0;background-image:url('${p.photo}');background-size:cover;background-position:center;filter:blur(20px) brightness(0.65);transform:scale(1.15)"></div>
                  <img src="${p.photo}" alt="광고" style="position:relative;width:100%;height:100%;object-fit:contain;display:block">`
-              : `<div class="emptypanel" style="margin:0;height:100%"><span>등록된 광고 이미지가 없습니다. (권장 1200×675px)</span></div>`}
+              : `<div class="emptypanel" style="margin:0;height:100%"><span>등록된 광고 이미지가 없습니다. (권장 1200×300px)</span></div>`}
             ${isAdmin ? `<button class="admin-delete-btn" data-delpost="${p.id}" data-delboard="${boardId}" aria-label="삭제" style="position:absolute;top:10px;right:10px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}
           </div>
         `;
@@ -2797,7 +2797,7 @@
     document.getElementById("write-body-row").style.display = imageOnly ? "none" : "block";
     document.getElementById("write-price-input").style.display = (!imageOnly && cfg.hasPrice) ? "block" : "none";
     document.getElementById("write-photo-row").style.display = (imageOnly || cfg.hasPhoto) ? "block" : "none";
-    document.getElementById("write-photo-hint").textContent = imageOnly ? "권장 크기 1200×675px (16:9) JPG 또는 PNG · 최대 2MB" : "최대 2MB";
+    document.getElementById("write-photo-hint").textContent = imageOnly ? "권장 크기 1200×300px JPG 또는 PNG · 최대 2MB" : "최대 2MB";
     document.getElementById("write-photo-input").value = "";
     document.getElementById("write-photo-preview").style.display = "none";
     document.getElementById("write-photo-label").textContent = "사진 첨부하기";
