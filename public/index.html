@@ -1093,7 +1093,7 @@
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 7h3l2-3h6l2 3h3v13H4V7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" stroke="currentColor" stroke-width="1.8"/></svg>
           <span id="write-photo-label">사진 첨부하기</span>
         </label>
-        <div class="write-charcount" style="text-align:left;margin-top:4px">최대 2MB</div>
+        <div class="write-charcount" id="write-photo-hint" style="text-align:left;margin-top:4px">최대 2MB</div>
         <input type="file" id="write-photo-input" accept="image/png,image/jpeg" style="display:none">
         <img id="write-photo-preview" style="display:none;width:100%;border-radius:10px;margin-top:8px">
       </div>
@@ -2685,10 +2685,10 @@
       const cCount = commentCounts[threadKey] || 0;
       if(imageOnly){
         return `
-          <div class="boardpost" data-postid="${p.id}" data-board="${boardId}" style="background:transparent;border:none;padding:0;display:flex;justify-content:center;position:relative">
+          <div class="boardpost" data-postid="${p.id}" data-board="${boardId}" style="display:block;padding:0;overflow:hidden;position:relative">
             ${p.photo
-              ? `<img src="${p.photo}" alt="광고" style="max-width:100%;max-height:320px;width:auto;height:auto;border-radius:var(--radius-m);display:block">`
-              : `<div class="emptypanel" style="margin:0;padding:30px;width:100%"><span>등록된 광고 이미지가 없습니다.</span></div>`}
+              ? `<img src="${p.photo}" alt="광고" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block">`
+              : `<div class="emptypanel" style="margin:0;padding:30px;aspect-ratio:16/9"><span>등록된 광고 이미지가 없습니다. (권장 1200×675px)</span></div>`}
             ${isAdmin ? `<button class="admin-delete-btn" data-delpost="${p.id}" data-delboard="${boardId}" aria-label="삭제" style="position:absolute;top:10px;right:10px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}
           </div>
         `;
@@ -2756,6 +2756,7 @@
     document.getElementById("write-body-row").style.display = imageOnly ? "none" : "block";
     document.getElementById("write-price-input").style.display = (!imageOnly && cfg.hasPrice) ? "block" : "none";
     document.getElementById("write-photo-row").style.display = (imageOnly || cfg.hasPhoto) ? "block" : "none";
+    document.getElementById("write-photo-hint").textContent = imageOnly ? "권장 크기 1200×675px (16:9) JPG 또는 PNG · 최대 2MB" : "최대 2MB";
     document.getElementById("write-photo-input").value = "";
     document.getElementById("write-photo-preview").style.display = "none";
     document.getElementById("write-photo-label").textContent = "사진 첨부하기";
