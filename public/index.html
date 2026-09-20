@@ -209,6 +209,13 @@
   .admin-delete-btn:hover{ color: var(--live); background: var(--live-dim); }
   .admin-delete-btn.sm{ width:20px; height:20px; margin-left:auto; }
 
+  .admin-edit-btn{
+    background:none; border:none; color: var(--text-faint); flex-shrink:0;
+    width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  }
+  .admin-edit-btn:hover{ color: var(--accent); background: var(--accent-dim); }
+  .admin-edit-btn.sm{ width:20px; height:20px; }
+
   .avatarbtn.admin-on{ background: var(--live-dim); color: var(--live); border-color: rgba(255,90,95,0.35); }
   .bannercarousel-row{ display:flex; flex-direction:column; gap:10px; }
   .bannercarousel{
@@ -2473,7 +2480,7 @@
       <div class="comment ${c.me ? 'me':''}">
         <div class="comment-avatar">${escapeHtml(c.nick.slice(0,1))}</div>
         <div class="comment-body">
-          <div class="comment-headrow"><span class="comment-nick">${escapeHtml(c.nick)}</span><span class="comment-time">${c.time}</span>${isAdmin ? `<button class="admin-delete-btn sm" data-delcomment="${c.id}" aria-label="댓글 삭제"><svg viewBox="0 0 24 24" width="13" height="13" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}</div>
+          <div class="comment-headrow"><span class="comment-nick">${escapeHtml(c.nick)}</span><span class="comment-time">${c.time}</span>${isAdmin ? `<button class="admin-edit-btn sm" data-editcomment="${c.id}" aria-label="댓글 수정"><svg viewBox="0 0 24 24" width="12" height="12" fill="none"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>` : ""}${isAdmin ? `<button class="admin-delete-btn sm" data-delcomment="${c.id}" aria-label="댓글 삭제"><svg viewBox="0 0 24 24" width="13" height="13" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}</div>
           <div class="comment-text">${escapeHtml(c.text)}</div>
           <div class="comment-actions">
             <button class="likebtn ${c.liked ? 'liked':''}" data-idx="${idx}">
@@ -2486,7 +2493,7 @@
             <div class="reply-item">
               <div class="comment-avatar">${escapeHtml(r.nick.slice(0,1))}</div>
               <div class="comment-body">
-                <div class="comment-headrow"><span class="comment-nick">${escapeHtml(r.nick)}</span><span class="comment-time">${r.time}</span>${isAdmin ? `<button class="admin-delete-btn sm" data-delreply="${r.id}" aria-label="답글 삭제"><svg viewBox="0 0 24 24" width="12" height="12" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}</div>
+                <div class="comment-headrow"><span class="comment-nick">${escapeHtml(r.nick)}</span><span class="comment-time">${r.time}</span>${isAdmin ? `<button class="admin-edit-btn sm" data-editreply="${r.id}" aria-label="답글 수정"><svg viewBox="0 0 24 24" width="11" height="11" fill="none"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>` : ""}${isAdmin ? `<button class="admin-delete-btn sm" data-delreply="${r.id}" aria-label="답글 삭제"><svg viewBox="0 0 24 24" width="12" height="12" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}</div>
                 <div class="comment-text">${escapeHtml(r.text)}</div>
               </div>
             </div>`).join("")}</div>` : ""}
@@ -2534,6 +2541,26 @@
         deleteThreadComment(btn.getAttribute("data-delreply"));
       });
     });
+    listEl.querySelectorAll("[data-editcomment]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute("data-editcomment");
+        const c = threadCommentsCache.find(c => c.id === id);
+        editThreadComment(id, c ? c.text : "");
+      });
+    });
+    listEl.querySelectorAll("[data-editreply]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute("data-editreply");
+        let currentText = "";
+        threadCommentsCache.forEach(c => {
+          const r = c.replies.find(r => r.id === id);
+          if(r) currentText = r.text;
+        });
+        editThreadComment(id, currentText);
+      });
+    });
     listEl.querySelectorAll(".replybtn").forEach(btn => {
       btn.addEventListener("click", () => {
         const idx = Number(btn.getAttribute("data-idx"));
@@ -2569,6 +2596,32 @@
       showToast("삭제되었습니다");
     }catch(err){
       showToast(err.message || "삭제에 실패했습니다");
+    }
+  }
+
+  // 관리자가 댓글/답글 내용을 직접 고쳐 쓸 수 있게 합니다.
+  async function editThreadComment(id, currentText){
+    if(!id) return;
+    const next = window.prompt("댓글 내용 수정", currentText || "");
+    if(next === null) return; // 취소
+    const trimmed = next.trim();
+    if(!trimmed || trimmed === currentText) return;
+    try{
+      await adminFetch("/api/admin/comments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, text: trimmed }),
+      });
+      const top = threadCommentsCache.find(c => c.id === id);
+      if(top) top.text = trimmed;
+      threadCommentsCache.forEach(c => {
+        const reply = c.replies.find(r => r.id === id);
+        if(reply) reply.text = trimmed;
+      });
+      renderCommentsUI(true);
+      showToast("수정되었습니다");
+    }catch(err){
+      showToast(err.message || "수정에 실패했습니다");
     }
   }
 
@@ -2741,6 +2794,7 @@
               ? `<div style="position:absolute;inset:0;background-image:url('${p.photo}');background-size:cover;background-position:center;filter:blur(20px) brightness(0.65);transform:scale(1.15)"></div>
                  <img src="${p.photo}" alt="광고" style="position:relative;width:100%;height:100%;object-fit:contain;display:block">`
               : `<div class="emptypanel" style="margin:0;height:100%"><span>등록된 광고 이미지가 없습니다. (권장 1200×300px)</span></div>`}
+            ${isAdmin ? `<button class="admin-edit-btn" data-editpost="${p.id}" data-editboard="${boardId}" aria-label="수정" style="position:absolute;top:10px;right:44px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>` : ""}
             ${isAdmin ? `<button class="admin-delete-btn" data-delpost="${p.id}" data-delboard="${boardId}" aria-label="삭제" style="position:absolute;top:10px;right:10px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}
           </div>
         `;
@@ -2757,6 +2811,7 @@
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
             ${cCount}
           </div>
+          ${isAdmin ? `<button class="admin-edit-btn" data-editpost="${p.id}" data-editboard="${boardId}" aria-label="수정"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>` : ""}
           ${isAdmin ? `<button class="admin-delete-btn" data-delpost="${p.id}" data-delboard="${boardId}" aria-label="삭제"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}
         </div>
       `;
@@ -2789,6 +2844,16 @@
         }
       });
     });
+    el.querySelectorAll("[data-editpost]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const bId = btn.getAttribute("data-editboard");
+        const pId = btn.getAttribute("data-editpost");
+        const post = posts.find(p => p.id === pId);
+        if(!post) return;
+        openWriteModal(bId, post);
+      });
+    });
     if(imageOnly){
       const prevBtn = document.getElementById("board-prevpage");
       const nextBtn = document.getElementById("board-nextpage");
@@ -2815,23 +2880,35 @@
 
   let writeBoardId = null;
   let writePhotoData = null;
-  function openWriteModal(boardId){
+  let editingPostId = null; // 관리자가 기존 글을 수정하는 중이면 그 글의 id, 새 글쓰기면 null
+  function openWriteModal(boardId, editingPost){
     writeBoardId = boardId;
-    writePhotoData = null;
+    editingPostId = editingPost ? editingPost.id : null;
+    writePhotoData = editingPost ? (editingPost.photo || null) : null;
     const cfg = BOARDS[boardId];
     const imageOnly = !!cfg.imageOnly;
-    document.getElementById("write-title").textContent = cfg.pinnable ? "공지 작성" : (imageOnly ? "광고 이미지 등록" : "글쓰기");
-    document.getElementById("write-title-input").value = "";
-    document.getElementById("write-body-input").value = "";
-    document.getElementById("write-price-input").value = "";
+    const editing = !!editingPost;
+    document.getElementById("write-title").textContent = editing
+      ? (imageOnly ? "광고 이미지 수정" : "글 수정")
+      : (cfg.pinnable ? "공지 작성" : (imageOnly ? "광고 이미지 등록" : "글쓰기"));
+    document.getElementById("write-title-input").value = editing ? (editingPost.title || "") : "";
+    document.getElementById("write-body-input").value = editing ? (editingPost.body || "") : "";
+    document.getElementById("write-price-input").value = editing ? (editingPost.price || "") : "";
     document.getElementById("write-title-row").style.display = imageOnly ? "none" : "block";
     document.getElementById("write-body-row").style.display = imageOnly ? "none" : "block";
     document.getElementById("write-price-input").style.display = (!imageOnly && cfg.hasPrice) ? "block" : "none";
     document.getElementById("write-photo-row").style.display = (imageOnly || cfg.hasPhoto) ? "block" : "none";
     document.getElementById("write-photo-hint").textContent = imageOnly ? "권장 크기 1200×300px JPG 또는 PNG · 최대 2MB" : "최대 2MB";
     document.getElementById("write-photo-input").value = "";
-    document.getElementById("write-photo-preview").style.display = "none";
-    document.getElementById("write-photo-label").textContent = "사진 첨부하기";
+    if(writePhotoData){
+      document.getElementById("write-photo-preview").src = writePhotoData;
+      document.getElementById("write-photo-preview").style.display = "block";
+      document.getElementById("write-photo-label").textContent = "다른 사진으로 변경";
+    } else {
+      document.getElementById("write-photo-preview").style.display = "none";
+      document.getElementById("write-photo-label").textContent = "사진 첨부하기";
+    }
+    document.getElementById("write-submit").textContent = editing ? "수정 완료" : "등록";
     document.getElementById("write-submit").disabled = true;
     checkWriteValid();
     document.getElementById("writemodal").classList.add("show");
@@ -2887,13 +2964,33 @@
     } else if(!title || !body){
       return;
     }
+    const submitBtn = document.getElementById("write-submit");
+
+    // ---- 관리자가 기존 글을 수정하는 경우: 관리자 API(PATCH)로 처리 ----
+    if(editingPostId){
+      submitBtn.disabled = true;
+      try{
+        await adminFetch("/api/admin/boardposts", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editingPostId, title, body, price: price || null, photo: writePhotoData || null }),
+        });
+        document.getElementById("writemodal").classList.remove("show");
+        renderBoard(writeBoardId);
+        showToast("수정되었습니다");
+      }catch(err){
+        showToast(err.message || "수정에 실패했습니다");
+        submitBtn.disabled = false;
+      }
+      return;
+    }
+
     if(!window.psCurrentUser){
       showToast("글쓰기는 로그인 후 이용할 수 있어요");
       document.getElementById("loginbtn").click();
       return;
     }
     if(!window.psSupabase){ showToast("Supabase 연동이 준비되지 않았습니다"); return; }
-    const submitBtn = document.getElementById("write-submit");
     submitBtn.disabled = true;
     try{
       const nickname = memberDisplayName(window.psCurrentUser);
@@ -3064,11 +3161,30 @@
     document.getElementById("moresheet").classList.remove("show");
   });
   document.getElementById("notifbtn").addEventListener("click", () => showToast("새로운 알림이 없습니다"));
+  // 관리자 모드는 오직 로그인 창의 "관리자 로그인" 탭(비밀번호 확인)을 통해서만
+  // 켤 수 있습니다. 아바타 버튼은 관리자일 때는 로그아웃, 아닐 때는 관리자
+  // 로그인 창으로 안내하는 역할만 합니다(비밀번호 없이 즉시 전환되지 않음).
   document.getElementById("avatarbtn").addEventListener("click", () => {
-    isAdmin = !isAdmin;
-    try{ localStorage.setItem("pulsescore_admin", isAdmin ? "1" : "0"); }catch(e){}
-    applyAdminUI();
-    showToast(isAdmin ? "관리자 모드로 전환되었습니다 (데모용)" : "일반 회원 화면으로 전환되었습니다");
+    if(isAdmin){
+      isAdmin = false;
+      window.psAdminSecret = null;
+      try{ localStorage.setItem("pulsescore_admin", "0"); }catch(e){}
+      try{ sessionStorage.removeItem("pulsescore_admin_secret"); }catch(e){}
+      applyAdminUI();
+      showToast("관리자 모드를 종료했습니다");
+      return;
+    }
+    document.getElementById("login-id-input").value = "";
+    document.getElementById("login-nickname-input").value = "";
+    document.getElementById("login-phone-input").value = "";
+    document.getElementById("login-pw-input").value = "";
+    document.getElementById("login-pw2-input").value = "";
+    document.getElementById("login-submit").disabled = true;
+    loginType = "admin";
+    authMode = "signin";
+    document.querySelectorAll("#login-subtabs button").forEach(b => b.classList.toggle("active", b.getAttribute("data-logintype") === "admin"));
+    renderLoginModal();
+    document.getElementById("loginmodal").classList.add("show");
   });
 
   // ===================== 로그인 / 회원가입 / 고객센터 문의 =====================
@@ -3335,7 +3451,10 @@
         <td style="white-space:nowrap;font-size:12.5px;color:var(--text-dim)">${escapeHtml(m.phone || "-")}</td>
         <td style="white-space:nowrap;font-size:12.5px;color:var(--text-dim)">${formatDateTime(m.createdAt)}</td>
         <td style="white-space:nowrap;font-size:12.5px">${m.emailConfirmed ? '<span class="chip ok">인증됨</span>' : '<span class="chip pending">미인증</span>'}</td>
-        <td style="text-align:right">
+        <td style="text-align:right;white-space:nowrap">
+          <button class="admin-edit-btn member-edit-btn" data-id="${escapeHtml(m.id)}" data-nickname="${escapeHtml(m.nickname || "")}" aria-label="닉네임 수정" title="닉네임 수정">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </button>
           <button class="admin-delete-btn member-delete-btn" data-id="${escapeHtml(m.id)}" data-email="${escapeHtml(m.email || "")}" aria-label="삭제" title="삭제">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -3374,6 +3493,29 @@
   document.getElementById("membersmodal").addEventListener("click", (e) => { if(e.target.id === "membersmodal") document.getElementById("membersmodal").classList.remove("show"); });
   document.getElementById("members-refresh").addEventListener("click", loadMembers);
   document.getElementById("members-body").addEventListener("click", async (e) => {
+    const editBtn = e.target.closest(".member-edit-btn");
+    if(editBtn){
+      const id = editBtn.getAttribute("data-id");
+      const current = editBtn.getAttribute("data-nickname") || "";
+      const next = window.prompt("닉네임 수정", current);
+      if(next === null) return; // 취소
+      const trimmed = next.trim();
+      if(!trimmed || trimmed === current) return;
+      editBtn.disabled = true;
+      try{
+        await adminFetch("/api/admin/members", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, nickname: trimmed }),
+        });
+        showToast("닉네임을 수정했습니다");
+        loadMembers();
+      }catch(err){
+        showToast(err.message || "수정하지 못했습니다");
+        editBtn.disabled = false;
+      }
+      return;
+    }
     const btn = e.target.closest(".member-delete-btn");
     if(!btn) return;
     const id = btn.getAttribute("data-id");
