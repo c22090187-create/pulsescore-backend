@@ -1079,12 +1079,12 @@
       </button>
     </div>
     <div class="writemodal-body">
-      <div>
+      <div id="write-title-row">
         <input type="text" id="write-title-input" placeholder="제목을 입력하세요" maxlength="60">
         <div class="write-charcount" id="write-title-count">0/60</div>
       </div>
       <input type="text" id="write-price-input" placeholder="가격 (예: 30,000원)" style="display:none">
-      <div>
+      <div id="write-body-row">
         <textarea id="write-body-input" placeholder="내용을 입력하세요" maxlength="1000"></textarea>
         <div class="write-charcount" id="write-body-count">0/1000</div>
       </div>
@@ -2624,7 +2624,7 @@
   const BOARDS = {
     talk: { label:"자유톡", hasPrice:false },
     freead: { label:"자유 광고방", hasPrice:false, hasPhoto:true },
-    paidad: { label:"유료 광고방", hasPrice:true, hasPhoto:true },
+    paidad: { label:"유료 광고방", imageOnly:true },
     notice: { label:"공지", hasPrice:false, pinnable:true },
     predictverify: { label:"나의 예측결과 인증", hasPrice:false, hasPhoto:true },
     discussion: { label:"자유토론", hasPrice:false }
@@ -2679,9 +2679,20 @@
     el.innerHTML = `<div class="panel emptypanel"><span>불러오는 중...</span></div>`;
     let [posts, commentCounts] = await Promise.all([fetchBoardPosts(boardId), fetchBoardCommentCounts(boardId)]);
     if(BOARDS[boardId].pinnable) posts = [...posts].sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0));
+    const imageOnly = !!BOARDS[boardId].imageOnly;
     el.innerHTML = posts.map(p => {
       const threadKey = "board_" + boardId + ":" + p.id;
       const cCount = commentCounts[threadKey] || 0;
+      if(imageOnly){
+        return `
+          <div class="boardpost" data-postid="${p.id}" data-board="${boardId}" style="display:block;padding:0;overflow:hidden;position:relative">
+            ${p.photo
+              ? `<img src="${p.photo}" alt="광고" style="width:100%;display:block">`
+              : `<div class="emptypanel" style="margin:0;padding:30px"><span>등록된 광고 이미지가 없습니다.</span></div>`}
+            ${isAdmin ? `<button class="admin-delete-btn" data-delpost="${p.id}" data-delboard="${boardId}" aria-label="삭제" style="position:absolute;top:10px;right:10px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}
+          </div>
+        `;
+      }
       return `
         <div class="boardpost" data-postid="${p.id}" data-board="${boardId}">
           ${p.photo ? `<img src="${p.photo}" alt="" style="width:52px;height:52px;border-radius:8px;object-fit:cover;flex-shrink:0">` : ""}
@@ -2735,12 +2746,16 @@
   function openWriteModal(boardId){
     writeBoardId = boardId;
     writePhotoData = null;
-    document.getElementById("write-title").textContent = BOARDS[boardId].pinnable ? "공지 작성" : "글쓰기";
+    const cfg = BOARDS[boardId];
+    const imageOnly = !!cfg.imageOnly;
+    document.getElementById("write-title").textContent = cfg.pinnable ? "공지 작성" : (imageOnly ? "광고 이미지 등록" : "글쓰기");
     document.getElementById("write-title-input").value = "";
     document.getElementById("write-body-input").value = "";
     document.getElementById("write-price-input").value = "";
-    document.getElementById("write-price-input").style.display = BOARDS[boardId].hasPrice ? "block" : "none";
-    document.getElementById("write-photo-row").style.display = BOARDS[boardId].hasPhoto ? "block" : "none";
+    document.getElementById("write-title-row").style.display = imageOnly ? "none" : "block";
+    document.getElementById("write-body-row").style.display = imageOnly ? "none" : "block";
+    document.getElementById("write-price-input").style.display = (!imageOnly && cfg.hasPrice) ? "block" : "none";
+    document.getElementById("write-photo-row").style.display = (imageOnly || cfg.hasPhoto) ? "block" : "none";
     document.getElementById("write-photo-input").value = "";
     document.getElementById("write-photo-preview").style.display = "none";
     document.getElementById("write-photo-label").textContent = "사진 첨부하기";
@@ -2766,6 +2781,7 @@
       document.getElementById("write-photo-preview").src = writePhotoData;
       document.getElementById("write-photo-preview").style.display = "block";
       document.getElementById("write-photo-label").textContent = "다른 사진으로 변경";
+      checkWriteValid();
     };
     reader.readAsDataURL(file);
   });
@@ -2778,17 +2794,26 @@
     titleCount.classList.toggle("limit", t.length >= 60);
     bodyCount.textContent = `${b.length}/1000`;
     bodyCount.classList.toggle("limit", b.length >= 1000);
-    document.getElementById("write-submit").disabled = !(t.trim() && b.trim());
+    const cfg = BOARDS[writeBoardId];
+    const imageOnly = !!(cfg && cfg.imageOnly);
+    document.getElementById("write-submit").disabled = imageOnly ? !writePhotoData : !(t.trim() && b.trim());
   }
   document.getElementById("write-title-input").addEventListener("input", checkWriteValid);
   document.getElementById("write-body-input").addEventListener("input", checkWriteValid);
   document.getElementById("write-close").addEventListener("click", () => document.getElementById("writemodal").classList.remove("show"));
   document.getElementById("writemodal").addEventListener("click", (e) => { if(e.target.id === "writemodal") document.getElementById("writemodal").classList.remove("show"); });
   document.getElementById("write-submit").addEventListener("click", async () => {
-    const title = document.getElementById("write-title-input").value.trim();
-    const body = document.getElementById("write-body-input").value.trim();
-    const price = document.getElementById("write-price-input").value.trim();
-    if(!title || !body || !writeBoardId) return;
+    if(!writeBoardId) return;
+    const cfg = BOARDS[writeBoardId] || {};
+    const imageOnly = !!cfg.imageOnly;
+    const title = imageOnly ? "광고" : document.getElementById("write-title-input").value.trim();
+    const body = imageOnly ? "" : document.getElementById("write-body-input").value.trim();
+    const price = imageOnly ? "" : document.getElementById("write-price-input").value.trim();
+    if(imageOnly){
+      if(!writePhotoData){ showToast("광고 이미지를 첨부해주세요"); return; }
+    } else if(!title || !body){
+      return;
+    }
     if(!window.psCurrentUser){
       showToast("글쓰기는 로그인 후 이용할 수 있어요");
       document.getElementById("loginbtn").click();
