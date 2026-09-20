@@ -2271,45 +2271,8 @@
     document.getElementById("vm-playbtn").classList.toggle("playing", videoPlaying);
   }
 
-  // ---------- comments (with likes + replies) — generic thread system ----------
-  const NICKS = ["축구매니아", "레드데빌", "직관러", "홈팀응원단", "스포츠광", "야구소년", "농구덕후", "새벽경기시청자", "K리그팬", "무명의고수"];
-  function seedMatchComments(match){
-    const n = 2 + Math.floor(Math.random()*3);
-    const templates = [
-      `${match.home} 오늘 분위기 좋은데요?`, `${match.away} 수비가 오늘따라 흔들리네요`,
-      `이 경기 결과 어떻게 보세요`, `${match.home} vs ${match.away} 예전 맞대결 기억나네요`,
-      `오늘 경기 꼭 챙겨봐야겠어요`, `초반 흐름이 심상치 않네요`
-    ];
-    const out = [];
-    for(let i=0;i<n;i++) out.push({ nick: NICKS[Math.floor(Math.random()*NICKS.length)], text: templates[Math.floor(Math.random()*templates.length)], time: `${5 + i*7}분 전`, me:false, likes: Math.floor(Math.random()*12), liked:false, replies:[] });
-    return out;
-  }
-  function seedGenericComments(topics){
-    const n = 1 + Math.floor(Math.random()*3);
-    const out = [];
-    for(let i=0;i<n;i++) out.push({ nick: NICKS[Math.floor(Math.random()*NICKS.length)], text: topics[Math.floor(Math.random()*topics.length)], time: `${3 + i*9}분 전`, me:false, likes: Math.floor(Math.random()*8), liked:false, replies:[] });
-    return out;
-  }
-  function normalizeComment(c){
-    return { nick:c.nick, text:c.text, time:c.time, me:!!c.me,
-      likes: typeof c.likes === "number" ? c.likes : 0, liked: !!c.liked,
-      replies: Array.isArray(c.replies) ? c.replies : [] };
-  }
-  function loadComments(threadKey, seedFn){
-    const key = "pulsescore_comments_" + threadKey;
-    try{ const raw = localStorage.getItem(key); if(raw) return JSON.parse(raw).map(normalizeComment); }catch(e){}
-    const seeded = (seedFn ? seedFn() : []).map(normalizeComment);
-    try{ localStorage.setItem(key, JSON.stringify(seeded)); }catch(e){}
-    return seeded;
-  }
-  function saveComments(threadKey, list){
-    try{ localStorage.setItem("pulsescore_comments_" + threadKey, JSON.stringify(list)); }catch(e){}
-  }
-
-  // 자유게시판 글의 댓글(board_*)은 아직 기기 로컬 저장이고,
-  // 경기 토론 댓글(그 외 threadKey = 경기 id)은 Supabase에 실제로 저장됩니다.
-  function isBoardThread(key){ return typeof key === "string" && key.indexOf("board_") === 0; }
-
+  // ---------- comments (with replies) — generic thread system, Supabase에 실제 저장 ----------
+  // threadKey는 경기 id("s1" 등) 또는 게시판 글("board_talk:<postId>" 등) 모두 지원합니다.
   let threadCommentsCache = [];
   async function fetchThreadComments(threadKey){
     if(!window.psSupabase) return [];
@@ -2349,13 +2312,11 @@
   }
 
   let currentThreadKey = null;
-  let currentSeedFn = null;
   let openReplyBoxes = new Set();
 
   let currentFavoriteId = null;
   function openThreadModal(opts){
     currentThreadKey = opts.threadKey;
-    currentSeedFn = opts.seedFn || (() => []);
     openReplyBoxes = new Set();
     document.getElementById("dm-teams").textContent = opts.headerTitle || "";
     document.getElementById("dm-league").textContent = opts.headerLeague || "";
@@ -2382,14 +2343,10 @@
     document.getElementById("dm-send").disabled = true;
     document.getElementById("discussmodal").classList.add("show");
 
-    if(isBoardThread(currentThreadKey)){
-      renderCommentsUI();
-    } else {
-      threadCommentsCache = [];
-      document.getElementById("dm-count").textContent = "0개";
-      document.getElementById("dm-list").innerHTML = `<div class="discuss-empty">불러오는 중...</div>`;
-      reloadThreadComments();
-    }
+    threadCommentsCache = [];
+    document.getElementById("dm-count").textContent = "0개";
+    document.getElementById("dm-list").innerHTML = `<div class="discuss-empty">불러오는 중...</div>`;
+    reloadThreadComments();
   }
 
   async function reloadThreadComments(){
@@ -2432,13 +2389,11 @@
 
   function commentHtml(c, idx){
     const replyOpen = openReplyBoxes.has(idx);
-    const board = isBoardThread(currentThreadKey);
-    const delKey = board ? idx : c.id;
     return `
       <div class="comment ${c.me ? 'me':''}">
         <div class="comment-avatar">${escapeHtml(c.nick.slice(0,1))}</div>
         <div class="comment-body">
-          <div class="comment-headrow"><span class="comment-nick">${escapeHtml(c.nick)}</span><span class="comment-time">${c.time}</span>${isAdmin ? `<button class="admin-delete-btn sm" data-delcomment="${delKey}" aria-label="댓글 삭제"><svg viewBox="0 0 24 24" width="13" height="13" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}</div>
+          <div class="comment-headrow"><span class="comment-nick">${escapeHtml(c.nick)}</span><span class="comment-time">${c.time}</span>${isAdmin ? `<button class="admin-delete-btn sm" data-delcomment="${c.id}" aria-label="댓글 삭제"><svg viewBox="0 0 24 24" width="13" height="13" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}</div>
           <div class="comment-text">${escapeHtml(c.text)}</div>
           <div class="comment-actions">
             <button class="likebtn ${c.liked ? 'liked':''}" data-idx="${idx}">
@@ -2447,17 +2402,14 @@
             </button>
             <button class="replybtn" data-idx="${idx}">답글</button>
           </div>
-          ${c.replies.length ? `<div class="replylist">${c.replies.map((r,ridx) => {
-            const replyDelKey = board ? (idx + ":" + ridx) : r.id;
-            return `
+          ${c.replies.length ? `<div class="replylist">${c.replies.map((r) => `
             <div class="reply-item">
               <div class="comment-avatar">${escapeHtml(r.nick.slice(0,1))}</div>
               <div class="comment-body">
-                <div class="comment-headrow"><span class="comment-nick">${escapeHtml(r.nick)}</span><span class="comment-time">${r.time}</span>${isAdmin ? `<button class="admin-delete-btn sm" data-delreply="${replyDelKey}" aria-label="답글 삭제"><svg viewBox="0 0 24 24" width="12" height="12" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}</div>
+                <div class="comment-headrow"><span class="comment-nick">${escapeHtml(r.nick)}</span><span class="comment-time">${r.time}</span>${isAdmin ? `<button class="admin-delete-btn sm" data-delreply="${r.id}" aria-label="답글 삭제"><svg viewBox="0 0 24 24" width="12" height="12" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>` : ""}</div>
                 <div class="comment-text">${escapeHtml(r.text)}</div>
               </div>
-            </div>`;
-          }).join("")}</div>` : ""}
+            </div>`).join("")}</div>` : ""}
           ${replyOpen ? `
             <div class="replyinputrow">
               <input type="text" placeholder="답글을 입력하세요" data-reply-input="${idx}" maxlength="200">
@@ -2468,11 +2420,10 @@
     `;
   }
 
-  // 화면에 현재 캐시된 목록(board: localStorage, 그 외: threadCommentsCache)을 그려줍니다.
+  // 화면에 현재 캐시된 목록(threadCommentsCache)을 그려줍니다.
   // 네트워크 요청 없이 즉시 다시 그리고 싶을 때(좋아요 토글, 답글창 열기 등) 이 함수를 씁니다.
   function renderCommentsUI(preserveScroll){
-    const board = isBoardThread(currentThreadKey);
-    const list = board ? loadComments(currentThreadKey, currentSeedFn) : threadCommentsCache;
+    const list = threadCommentsCache;
     document.getElementById("dm-count").textContent = list.length + "개";
     const listEl = document.getElementById("dm-list");
     const prevScroll = listEl.scrollTop;
@@ -2486,41 +2437,21 @@
     listEl.querySelectorAll(".likebtn").forEach(btn => {
       btn.addEventListener("click", () => {
         const idx = Number(btn.getAttribute("data-idx"));
-        const l = board ? loadComments(currentThreadKey, currentSeedFn) : threadCommentsCache;
-        l[idx].liked = !l[idx].liked;
-        l[idx].likes += l[idx].liked ? 1 : -1;
-        if(board) saveComments(currentThreadKey, l);
+        threadCommentsCache[idx].liked = !threadCommentsCache[idx].liked;
+        threadCommentsCache[idx].likes += threadCommentsCache[idx].liked ? 1 : -1;
         renderCommentsUI(true);
       });
     });
     listEl.querySelectorAll("[data-delcomment]").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        if(board){
-          const idx = Number(btn.getAttribute("data-delcomment"));
-          const l = loadComments(currentThreadKey, currentSeedFn);
-          l.splice(idx, 1);
-          saveComments(currentThreadKey, l);
-          renderCommentsUI(true);
-          showToast("댓글이 삭제되었습니다");
-        } else {
-          deleteThreadComment(btn.getAttribute("data-delcomment"));
-        }
+        deleteThreadComment(btn.getAttribute("data-delcomment"));
       });
     });
     listEl.querySelectorAll("[data-delreply]").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        if(board){
-          const [cIdx, rIdx] = btn.getAttribute("data-delreply").split(":").map(Number);
-          const l = loadComments(currentThreadKey, currentSeedFn);
-          l[cIdx].replies.splice(rIdx, 1);
-          saveComments(currentThreadKey, l);
-          renderCommentsUI(true);
-          showToast("답글이 삭제되었습니다");
-        } else {
-          deleteThreadComment(btn.getAttribute("data-delreply"));
-        }
+        deleteThreadComment(btn.getAttribute("data-delreply"));
       });
     });
     listEl.querySelectorAll(".replybtn").forEach(btn => {
@@ -2567,15 +2498,6 @@
     if(!input) return;
     const text = input.value.trim();
     if(!text) return;
-
-    if(isBoardThread(currentThreadKey)){
-      const l = loadComments(currentThreadKey, currentSeedFn);
-      l[idx].replies.push({ nick:"나", text, time:"방금 전", me:true });
-      saveComments(currentThreadKey, l);
-      openReplyBoxes.delete(idx);
-      renderCommentsUI(true);
-      return;
-    }
 
     if(!window.psCurrentUser){
       showToast("답글 작성은 로그인 후 이용할 수 있어요");
@@ -2631,16 +2553,6 @@
     const input = document.getElementById("dm-input");
     const text = input.value.trim();
     if(!text || !currentThreadKey) return;
-
-    if(isBoardThread(currentThreadKey)){
-      const list = loadComments(currentThreadKey, currentSeedFn);
-      list.push({ nick:"나", text, time:"방금 전", me:true, likes:0, liked:false, replies:[] });
-      saveComments(currentThreadKey, list);
-      input.value = "";
-      document.getElementById("dm-send").disabled = true;
-      renderCommentsUI();
-      return;
-    }
 
     if(!window.psCurrentUser){
       showToast("댓글 작성은 로그인 후 이용할 수 있어요");
@@ -2705,15 +2617,33 @@
     }
   }
 
+  // 한 게시판의 글들에 달린 댓글 수를 한 번에 가져옵니다. (thread_key = "board_<boardId>:<postId>")
+  async function fetchBoardCommentCounts(boardId){
+    if(!window.psSupabase) return {};
+    try{
+      const { data, error } = await window.psSupabase
+        .from("comments")
+        .select("thread_key")
+        .like("thread_key", "board_" + boardId + ":%");
+      if(error) throw error;
+      const counts = {};
+      (data || []).forEach((r) => { counts[r.thread_key] = (counts[r.thread_key] || 0) + 1; });
+      return counts;
+    }catch(err){
+      console.warn("[PulseScore] 댓글 수 불러오기 실패:", err);
+      return {};
+    }
+  }
+
   async function renderBoard(boardId){
     const el = document.getElementById("board-" + boardId);
     if(!el) return;
     el.innerHTML = `<div class="panel emptypanel"><span>불러오는 중...</span></div>`;
-    let posts = await fetchBoardPosts(boardId);
+    let [posts, commentCounts] = await Promise.all([fetchBoardPosts(boardId), fetchBoardCommentCounts(boardId)]);
     if(BOARDS[boardId].pinnable) posts = [...posts].sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0));
     el.innerHTML = posts.map(p => {
       const threadKey = "board_" + boardId + ":" + p.id;
-      const cCount = loadComments(threadKey, () => seedGenericComments(["좋은 정보 감사합니다", "저도 궁금했던 내용이에요", "댓글 남깁니다"])).length;
+      const cCount = commentCounts[threadKey] || 0;
       return `
         <div class="boardpost" data-postid="${p.id}" data-board="${boardId}">
           ${p.photo ? `<img src="${p.photo}" alt="" style="width:52px;height:52px;border-radius:8px;object-fit:cover;flex-shrink:0">` : ""}
@@ -2757,7 +2687,6 @@
           headerLeague: BOARDS[bId].label,
           headerStatus: `${escapeHtml(post.author)} · ${post.time}${post.price ? ' · ' + escapeHtml(post.price) : ''}`,
           bodyHtml: photoHtml + escapeHtml(post.body).replace(/\n/g,"<br>"),
-          seedFn: () => seedGenericComments(["좋은 정보 감사합니다", "저도 궁금했던 내용이에요", "댓글 남깁니다"])
         });
       });
     });
