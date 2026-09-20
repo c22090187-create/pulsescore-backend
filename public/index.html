@@ -507,7 +507,7 @@
     border-radius:8px; padding:8px 10px; font-size:12.5px; font-family:inherit; margin-bottom:10px;
   }
   .sidesearch::placeholder{ color: var(--text-faint); }
-  .leaguepick{ display:flex; flex-direction:column; gap:2px; }
+  .leaguepick{ display:flex; flex-direction:column; gap:2px; max-height:420px; overflow-y:auto; padding-right:2px; }
   .leaguepick button{
     display:flex; align-items:center; justify-content:space-between; background:none; border:none;
     color: var(--text-dim); font-size:13px; font-weight:600; padding:8px 8px; border-radius:8px; text-align:left;
@@ -515,6 +515,12 @@
   .leaguepick button .cnt{ font-size:11.5px; color: var(--text-faint); font-weight:600; }
   .leaguepick button.active{ background: var(--accent-dim); color: var(--accent); }
   .leaguepick button.active .cnt{ color: var(--accent); }
+  .leaguepick-sporthead{
+    display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700; color: var(--text-faint);
+    letter-spacing:.04em; padding:10px 8px 4px; text-transform:uppercase;
+  }
+  .leaguepick-sporthead span{ color: var(--text-faint); font-weight:600; }
+  .leaguepick-sporthead:first-of-type{ padding-top:6px; }
   .leaguepick button:hover:not(.active){ background: var(--panel-2); color: var(--text); }
 
   .favlist{ display:flex; flex-direction:column; gap:8px; }
@@ -1421,17 +1427,48 @@
     renderSpotlight();
   }
 
+  const SPORT_LABELS = { soccer:"축구", baseball:"야구", basketball:"농구", volleyball:"배구", tennis:"테니스" };
+  const SPORT_ORDER = ["soccer","baseball","basketball","volleyball","tennis"];
+
+  function leagueBtnHtml(g){
+    return `<button class="${currentLeagueFilter === g.id ? 'active':''}" data-league="${g.id}"><span>${g.flag} ${g.name}</span><span class="cnt">${g.matches.length}</span></button>`;
+  }
+
   function renderLeaguePick(){
     const el = document.getElementById("leaguepick");
     if(!el) return;
     const q = (document.getElementById("leaguesearch").value || "").trim().toLowerCase();
-    const visible = LEAGUES.filter(g => (currentLiveSport === "all" || g.sport === currentLiveSport) && g.name.toLowerCase().includes(q));
-    const allCount = visible.reduce((s,g) => s + g.matches.length, 0);
-    el.innerHTML = `
-      <button class="${currentLeagueFilter === 'all' ? 'active':''}" data-league="all"><span>전체 리그</span><span class="cnt">${allCount}</span></button>
-      ${visible.map(g => `<button class="${currentLeagueFilter === g.id ? 'active':''}" data-league="${g.id}"><span>${g.flag} ${g.name}</span><span class="cnt">${g.matches.length}</span></button>`).join("")}
-    `;
-    el.querySelectorAll("button").forEach(btn => {
+    // 검색어가 종목 이름(축구/야구/농구/배구/테니스)과 일치하면 해당 종목 전체를 보여줍니다.
+    const matchedSportKey = q ? Object.keys(SPORT_LABELS).find(key => SPORT_LABELS[key].includes(q)) : null;
+
+    const filtered = LEAGUES.filter(g => {
+      if(currentLiveSport !== "all" && g.sport !== currentLiveSport) return false;
+      if(!q) return true;
+      if(matchedSportKey) return g.sport === matchedSportKey;
+      return g.name.toLowerCase().includes(q);
+    });
+
+    const allCount = filtered.reduce((s,g) => s + g.matches.length, 0);
+    let bodyHtml = `<button class="${currentLeagueFilter === 'all' ? 'active':''}" data-league="all"><span>전체 리그</span><span class="cnt">${allCount}</span></button>`;
+
+    if(currentLiveSport === "all"){
+      // 종목별로 묶어서 헤더와 함께 보여줍니다. (많은 리그를 한눈에 찾기 쉽도록)
+      SPORT_ORDER.forEach(sportKey => {
+        const group = filtered.filter(g => g.sport === sportKey).sort((a,b) => b.matches.length - a.matches.length);
+        if(group.length === 0) return;
+        bodyHtml += `<div class="leaguepick-sporthead">${sportEmoji(sportKey)} ${SPORT_LABELS[sportKey]} <span>${group.length}</span></div>`;
+        bodyHtml += group.map(leagueBtnHtml).join("");
+      });
+      if(filtered.length === 0){
+        bodyHtml += `<div class="favempty">검색 결과가 없습니다.</div>`;
+      }
+    } else {
+      const sorted = [...filtered].sort((a,b) => b.matches.length - a.matches.length);
+      bodyHtml += sorted.map(leagueBtnHtml).join("") || `<div class="favempty">검색 결과가 없습니다.</div>`;
+    }
+
+    el.innerHTML = bodyHtml;
+    el.querySelectorAll("button[data-league]").forEach(btn => {
       btn.addEventListener("click", () => {
         currentLeagueFilter = btn.getAttribute("data-league");
         renderScoresPage();
