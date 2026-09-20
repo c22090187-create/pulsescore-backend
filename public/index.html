@@ -1875,10 +1875,15 @@
       <div style="font-size:14px;color:var(--text-dim);margin:-8px 0 16px;font-weight:600">${match.home} vs ${match.away}</div>
       ${groupsHtml}
       <div class="picksummary" id="picksummary" style="margin-top:16px;border-top:1px solid var(--line-soft);padding-top:4px"></div>
+      ${match.status === "진행중" ? `
+      <button class="savebtn" id="savebtn" disabled style="opacity:.5;cursor:not-allowed">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M12 8v5m0 3.5h.01M12 3l9 16.5H3L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        이미 시작된 경기는 예측할 수 없어요
+      </button>` : `
       <button class="savebtn" id="savebtn">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M5 5h11l3 3v11H5V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 5v5h8V5" stroke="currentColor" stroke-width="1.8"/></svg>
         예측 기록 저장
-      </button>
+      </button>`}
       <div class="footnote">
         <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h4l3-8 4 16 3-8h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         스포츠를 더 깊이, 더 재미있게 펄스스코어와 함께하세요.
@@ -1891,7 +1896,9 @@
       });
     });
     renderPickSummary(match, p);
-    document.getElementById("savebtn").addEventListener("click", () => savePrediction(match, p));
+    if(match.status !== "진행중"){
+      document.getElementById("savebtn").addEventListener("click", () => savePrediction(match, p));
+    }
   }
 
   function renderPickSummary(match, p){
@@ -1913,6 +1920,7 @@
   }
 
   function savePrediction(match, p){
+    if(match.status === "진행중"){ showToast("이미 시작된 경기는 예측을 저장할 수 없어요"); return; }
     const hasAny = GROUP_ORDER.some(g => p[g]);
     if(!hasAny){ showToast("예측 항목을 하나 이상 선택하세요"); return; }
     savedPredictions = savedPredictions.filter(sp => sp.matchId !== match.id);
