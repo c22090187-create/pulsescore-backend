@@ -213,9 +213,9 @@
   .bannercarousel-row{ display:flex; flex-direction:column; gap:10px; }
   .bannercarousel{
     position:relative; border-radius: var(--radius-l); overflow:hidden; border:1px solid var(--line);
-    aspect-ratio: 16/2.6; background: var(--panel);
+    aspect-ratio: 16/2; background: var(--panel);
   }
-  @media (max-width:640px){ .bannercarousel{ aspect-ratio: 16/4.5; } }
+  @media (max-width:640px){ .bannercarousel{ aspect-ratio: 16/3.5; } }
   .bannerslide{
     position:absolute; inset:0; overflow:hidden;
     opacity:0; transition: opacity .5s ease;
@@ -828,7 +828,7 @@
     </div>
     <div class="banneradmin" id="banneradmin">
       <div class="banneradmin-head">
-        <span class="label">가로형 이미지 10칸(2줄 × 5칸) · 1200×675px JPG 또는 PNG</span>
+        <span class="label">가로형 이미지 10칸(2줄 × 5칸) · 권장 1600×200px (8:1) JPG 또는 PNG</span>
       </div>
       <div class="bannergrid" id="bannergrid"></div>
       <button class="bannerregisterbtn" id="bannerregister">등록 완료</button>
@@ -1624,7 +1624,7 @@
     const grid = document.getElementById("bannergrid");
     grid.innerHTML = banners.map((b,i) => `
       <div class="bannerslot ${b ? 'filled':''}" data-slot="${i}">
-        ${b ? `<img src="${b}" alt="배너 ${i+1}">` : `<div class="placeholder"><b>배너 ${i+1}</b><span>1200×675px JPG 또는 PNG</span></div>`}
+        ${b ? `<img src="${b}" alt="배너 ${i+1}">` : `<div class="placeholder"><b>배너 ${i+1}</b><span>권장 1600×200px (8:1)</span></div>`}
         <button class="removebtn" data-remove="${i}">✕</button>
         <input type="file" accept="image/png,image/jpeg" data-fileslot="${i}">
       </div>
