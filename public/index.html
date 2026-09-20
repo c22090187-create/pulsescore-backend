@@ -1136,13 +1136,11 @@
       </button>
     </div>
     <div class="writemodal-body">
+      <div style="font-size:15px;font-weight:700" id="account-name-label">-</div>
       <div class="write-charcount" style="text-align:left;font-size:12.5px" id="account-email-label">-</div>
-      <input type="text" id="account-nickname-input" placeholder="닉네임" maxlength="20">
-      <div class="write-charcount" style="text-align:left" id="account-status-text">닉네임을 바꾸고 저장을 눌러주세요.</div>
     </div>
-    <div class="writemodal-foot" style="justify-content:space-between">
-      <button type="button" id="account-logout" style="background:none;border:1px solid var(--line);color:var(--text-dim);font-weight:600;font-size:13px;padding:9px 16px;border-radius:999px">로그아웃</button>
-      <button id="account-save">저장</button>
+    <div class="writemodal-foot" style="justify-content:center">
+      <button type="button" id="account-logout" style="width:100%;background:none;border:1px solid var(--line);color:var(--text-dim);font-weight:700;font-size:14px;padding:11px 16px;border-radius:999px">로그아웃</button>
     </div>
   </div>
 </div>
@@ -2763,32 +2761,12 @@
   }
   function openAccountModal(){
     if(!window.psCurrentUser) return;
+    document.getElementById("account-name-label").textContent = memberDisplayName(window.psCurrentUser);
     document.getElementById("account-email-label").textContent = window.psCurrentUser.email || "";
-    document.getElementById("account-nickname-input").value = memberDisplayName(window.psCurrentUser);
-    document.getElementById("account-status-text").textContent = "닉네임을 바꾸고 저장을 눌러주세요.";
     document.getElementById("accountmodal").classList.add("show");
   }
   document.getElementById("account-close").addEventListener("click", () => document.getElementById("accountmodal").classList.remove("show"));
   document.getElementById("accountmodal").addEventListener("click", (e) => { if(e.target.id === "accountmodal") document.getElementById("accountmodal").classList.remove("show"); });
-  document.getElementById("account-save").addEventListener("click", async () => {
-    const nickname = document.getElementById("account-nickname-input").value.trim();
-    if(!nickname){ showToast("닉네임을 입력해주세요"); return; }
-    if(!window.psSupabase){ showToast("Supabase 연동이 준비되지 않았습니다"); return; }
-    const btn = document.getElementById("account-save");
-    btn.disabled = true;
-    try{
-      const { data, error } = await window.psSupabase.auth.updateUser({ data: { nickname } });
-      if(error) throw error;
-      window.psCurrentUser = data.user || window.psCurrentUser;
-      applyMemberUI();
-      showToast("저장했습니다");
-      document.getElementById("accountmodal").classList.remove("show");
-    }catch(err){
-      showToast(err.message || "저장하지 못했습니다");
-    }finally{
-      btn.disabled = false;
-    }
-  });
   document.getElementById("account-logout").addEventListener("click", async () => {
     try{
       if(window.psSupabase) await window.psSupabase.auth.signOut();
