@@ -3184,16 +3184,26 @@
     document.getElementById("moresheet").classList.remove("show");
   });
   document.getElementById("notifbtn").addEventListener("click", () => showToast("새로운 알림이 없습니다"));
+  // 회원 로그인과 관리자 로그인은 서로 배타적입니다 - 한쪽으로 로그인하면
+  // 다른 쪽 세션은 자동으로 종료됩니다.
+  function exitAdminMode(){
+    isAdmin = false;
+    window.psAdminSecret = null;
+    try{ localStorage.setItem("pulsescore_admin", "0"); }catch(e){}
+    try{ sessionStorage.removeItem("pulsescore_admin_secret"); }catch(e){}
+    applyAdminUI();
+  }
+  async function exitMemberSession(){
+    try{ if(window.psSupabase) await window.psSupabase.auth.signOut(); }catch(e){ /* ignore */ }
+    window.psCurrentUser = null;
+    applyMemberUI();
+  }
   // 관리자 모드는 오직 로그인 창의 "관리자 로그인" 탭(비밀번호 확인)을 통해서만
   // 켤 수 있습니다. 아바타 버튼은 관리자일 때는 로그아웃, 아닐 때는 관리자
   // 로그인 창으로 안내하는 역할만 합니다(비밀번호 없이 즉시 전환되지 않음).
   document.getElementById("avatarbtn").addEventListener("click", () => {
     if(isAdmin){
-      isAdmin = false;
-      window.psAdminSecret = null;
-      try{ localStorage.setItem("pulsescore_admin", "0"); }catch(e){}
-      try{ sessionStorage.removeItem("pulsescore_admin_secret"); }catch(e){}
-      applyAdminUI();
+      exitAdminMode();
       showToast("관리자 모드를 종료했습니다");
       return;
     }
@@ -3334,6 +3344,7 @@
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || "관리자 비밀번호가 올바르지 않습니다");
         }
+        await exitMemberSession();
         window.psAdminSecret = secret;
         try{ sessionStorage.setItem("pulsescore_admin_secret", secret); }catch(e){}
         isAdmin = true;
@@ -3382,6 +3393,7 @@
           showToast("가입 확인 메일을 보냈어요. 메일함을 확인해주세요.");
           document.getElementById("loginmodal").classList.remove("show");
         } else {
+          if(isAdmin) exitAdminMode();
           window.psCurrentUser = data.user || null;
           applyMemberUI();
           loadBookmarksFromSupabase();
@@ -3392,6 +3404,7 @@
       } else {
         const { data, error } = await window.psSupabase.auth.signInWithPassword({ email, password });
         if(error) throw error;
+        if(isAdmin) exitAdminMode();
         window.psCurrentUser = data.user || null;
         applyMemberUI();
         loadBookmarksFromSupabase();
