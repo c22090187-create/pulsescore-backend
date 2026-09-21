@@ -202,6 +202,9 @@
   .adminonly-btn.adminonly-btn{ display:none !important; }
   .adminonly-btn.adminonly-btn.show-admin{ display:flex !important; }
 
+  .unread-dot{ display:none; width:7px; height:7px; border-radius:50%; background: var(--live); margin-left:6px; vertical-align:middle; flex-shrink:0; }
+  .unread-dot.show{ display:inline-block; }
+
   .admin-delete-btn{
     background:none; border:none; color: var(--text-faint); flex-shrink:0;
     width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center;
@@ -814,7 +817,7 @@
     <button class="iconbtn" id="notifbtn" aria-label="알림"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 01-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="dot"></span></button>
     <button class="iconbtn adminonly-btn" id="admintoolsbtn" aria-label="관리자 메뉴" title="관리자 메뉴"><svg viewBox="0 0 24 24" fill="none"><path d="M10.3 3.5c.3-1.3 2.1-1.3 2.4 0l.2.9a1.6 1.6 0 002.3 1l.8-.5c1.1-.7 2.4.6 1.7 1.7l-.5.8a1.6 1.6 0 001 2.3l.9.2c1.3.3 1.3 2.1 0 2.4l-.9.2a1.6 1.6 0 00-1 2.3l.5.8c.7 1.1-.6 2.4-1.7 1.7l-.8-.5a1.6 1.6 0 00-2.3 1l-.2.9c-.3 1.3-2.1 1.3-2.4 0l-.2-.9a1.6 1.6 0 00-2.3-1l-.8.5c-1.1.7-2.4-.6-1.7-1.7l.5-.8a1.6 1.6 0 00-1-2.3l-.9-.2c-1.3-.3-1.3-2.1 0-2.4l.9-.2a1.6 1.6 0 001-2.3l-.5-.8c-.7-1.1.6-2.4 1.7-1.7l.8.5a1.6 1.6 0 002.3-1l.2-.9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/></svg></button>
     <button class="avatarbtn" id="avatarbtn">PS</button>
-    <button class="ghostbtn hide-tablet" id="supportbtn">고객센터 문의</button>
+    <button class="ghostbtn hide-tablet" id="supportbtn">고객센터 문의<span class="unread-dot" id="support-unread-dot"></span></button>
     <button class="primarybtn-sm" id="loginbtn">회원 로그인</button>
   </div>
 </div>
@@ -1054,7 +1057,7 @@
       <button class="adminonly-btn" id="more-membersbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>회원 관리</span></button>
       <button class="adminonly-btn" id="more-supportlistbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18h.01M9.5 9a2.5 2.5 0 015 0c0 1.5-1.5 2-2 2.7-.3.4-.5.9-.5 1.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg><span>문의내역 관리</span></button>
       <div style="height:1px;background:var(--line-soft);margin:6px 4px"></div>
-      <button id="more-supportbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18h.01M9.5 9a2.5 2.5 0 015 0c0 1.5-1.5 2-2 2.7-.3.4-.5.9-.5 1.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg><span>고객센터 문의</span></button>
+      <button id="more-supportbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18h.01M9.5 9a2.5 2.5 0 015 0c0 1.5-1.5 2-2 2.7-.3.4-.5.9-.5 1.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg><span>고객센터 문의</span><span class="unread-dot" id="support-unread-dot-more"></span></button>
     </div>
   </div>
 </div>
@@ -1197,26 +1200,60 @@
 </div>
 
 <div class="modal-overlay" id="supportmodal">
-  <div class="writemodal">
-    <div class="writemodal-head"><span>고객센터 문의</span>
+  <div class="writemodal" style="max-width:480px">
+    <div class="writemodal-head"><span id="support-modal-title">고객센터 문의</span>
       <button class="modal-close" id="support-close" aria-label="닫기">
         <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
     </div>
-    <div class="writemodal-body">
-      <select id="support-type-input" style="width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit">
-        <option value="일반 문의">일반 문의</option>
-        <option value="신고">신고</option>
-        <option value="제휴·광고 문의">제휴·광고 문의</option>
-        <option value="기타">기타</option>
-      </select>
-      <input type="text" id="support-email-input" placeholder="답변받을 이메일">
-      <div>
-        <textarea id="support-body-input" placeholder="문의 내용을 입력하세요" maxlength="500"></textarea>
-        <div class="write-charcount" id="support-body-count">0/500</div>
+
+    <div id="support-list-section">
+      <div class="writemodal-body">
+        <button class="ghostbtn" id="support-new-btn" style="align-self:flex-end;padding:7px 14px;font-size:12.5px">+ 새 문의 작성</button>
+        <div id="support-history-list" style="max-height:52vh;overflow-y:auto"><div class="discuss-empty">불러오는 중...</div></div>
       </div>
     </div>
-    <div class="writemodal-foot"><button id="support-submit" disabled>제출하기</button></div>
+
+    <div id="support-compose-section" style="display:none">
+      <div class="writemodal-body">
+        <select id="support-type-input" style="width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit">
+          <option value="일반 문의">일반 문의</option>
+          <option value="신고">신고</option>
+          <option value="제휴·광고 문의">제휴·광고 문의</option>
+          <option value="기타">기타</option>
+        </select>
+        <div>
+          <textarea id="support-body-input" placeholder="문의 내용을 입력하세요" maxlength="500"></textarea>
+          <div class="write-charcount" id="support-body-count">0/500</div>
+        </div>
+      </div>
+      <div class="writemodal-foot" style="gap:8px">
+        <button class="ghostbtn" id="support-back-btn" style="flex:0 0 auto;padding:0 16px">목록으로</button>
+        <button id="support-submit" disabled style="flex:1">제출하기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="supportreplymodal">
+  <div class="discussmodal" style="max-width:520px">
+    <div class="discuss-head">
+      <div class="discuss-headinfo">
+        <span class="dh-teams" id="supportreply-title">문의 답변</span>
+        <span class="dh-meta" id="supportreply-meta"></span>
+      </div>
+      <button class="modal-close" id="supportreply-close" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="supportreply-original" style="padding:12px 16px;border-bottom:1px solid var(--line-soft);font-size:13px;color:var(--text-dim);line-height:1.6;flex-shrink:0;white-space:pre-wrap"></div>
+    <div class="discuss-list" id="supportreply-list"></div>
+    <div class="discuss-inputrow">
+      <input type="text" id="supportreply-input" placeholder="답변을 입력하세요" maxlength="500">
+      <button class="discuss-sendbtn" id="supportreply-send" disabled>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 12l16-8-6 16-2-7-8-1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -3197,6 +3234,7 @@
     try{ if(window.psSupabase) await window.psSupabase.auth.signOut(); }catch(e){ /* ignore */ }
     window.psCurrentUser = null;
     applyMemberUI();
+    refreshSupportUnreadBadge();
   }
   // 관리자 모드는 오직 로그인 창의 "관리자 로그인" 탭(비밀번호 확인)을 통해서만
   // 켤 수 있습니다. 아바타 버튼은 관리자일 때는 로그아웃, 아닐 때는 관리자
@@ -3278,15 +3316,12 @@
     applyMemberUI();
     clearLocalBookmarks();
     clearLocalPredictions();
+    refreshSupportUnreadBadge();
     document.getElementById("accountmodal").classList.remove("show");
     showToast("로그아웃되었습니다");
   });
 
-  document.getElementById("loginbtn").addEventListener("click", () => {
-    if(window.psCurrentUser){
-      openAccountModal();
-      return;
-    }
+  function openMemberLoginModal(){
     document.getElementById("login-id-input").value = "";
     document.getElementById("login-nickname-input").value = "";
     document.getElementById("login-phone-input").value = "";
@@ -3298,6 +3333,13 @@
     document.querySelectorAll("#login-subtabs button").forEach(b => b.classList.toggle("active", b.getAttribute("data-logintype") === "member"));
     renderLoginModal();
     document.getElementById("loginmodal").classList.add("show");
+  }
+  document.getElementById("loginbtn").addEventListener("click", () => {
+    if(window.psCurrentUser){
+      openAccountModal();
+      return;
+    }
+    openMemberLoginModal();
   });
   document.getElementById("login-subtabs").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-logintype]");
@@ -3398,6 +3440,7 @@
           applyMemberUI();
           loadBookmarksFromSupabase();
           loadPredictionsFromSupabase();
+          refreshSupportUnreadBadge();
           document.getElementById("loginmodal").classList.remove("show");
           showToast("가입 완료! 회원으로 로그인되었습니다");
         }
@@ -3409,6 +3452,7 @@
         applyMemberUI();
         loadBookmarksFromSupabase();
         loadPredictionsFromSupabase();
+        refreshSupportUnreadBadge();
         document.getElementById("loginmodal").classList.remove("show");
         showToast("회원으로 로그인되었습니다");
       }
@@ -3436,6 +3480,7 @@
             applyMemberUI();
             loadBookmarksFromSupabase();
             loadPredictionsFromSupabase();
+            refreshSupportUnreadBadge();
           }
         }).catch(()=>{});
       } else if(tries > 20){
@@ -3578,11 +3623,17 @@
     const rows = tickets.map((t) => `
       <tr data-id="${escapeHtml(t.id)}">
         <td style="white-space:nowrap;font-size:12.5px;color:var(--text-dim)">${escapeHtml(t.type || "-")}</td>
-        <td style="font-size:12.5px">${escapeHtml(t.email || "-")}</td>
-        <td style="font-size:12.5px;max-width:220px;white-space:pre-wrap;word-break:break-word">${escapeHtml(t.body || "-")}</td>
+        <td>
+          <div style="font-weight:700">${escapeHtml(t.nickname || "닉네임 없음")}</div>
+          <div style="font-size:11.5px;color:var(--text-faint)">${escapeHtml(t.email || "-")}</div>
+        </td>
+        <td style="font-size:12.5px;max-width:200px;white-space:pre-wrap;word-break:break-word">${escapeHtml(t.body || "-")}</td>
         <td style="white-space:nowrap;font-size:12px;color:var(--text-dim)">${formatDateTime(t.created_at)}</td>
         <td style="white-space:nowrap;font-size:12.5px">${t.status === "처리완료" ? '<span class="chip ok">처리완료</span>' : '<span class="chip pending">접수</span>'}</td>
         <td style="text-align:right;white-space:nowrap">
+          <button class="admin-edit-btn support-reply-btn" data-id="${escapeHtml(t.id)}" data-type="${escapeHtml(t.type || "")}" data-nickname="${escapeHtml(t.nickname || "")}" data-body="${escapeHtml(t.body || "")}" aria-label="답변하기" title="답변하기">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 12l16-8-6 16-2-7-8-1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </button>
           ${t.status === "처리완료" ? "" : `
           <button class="admin-edit-btn support-resolve-btn" data-id="${escapeHtml(t.id)}" aria-label="처리완료로 표시" title="처리완료로 표시">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -3595,7 +3646,7 @@
     body.innerHTML = `
       <div class="htable">
         <table>
-          <thead><tr><th>구분</th><th>이메일</th><th>내용</th><th>접수일</th><th>상태</th><th></th></tr></thead>
+          <thead><tr><th>구분</th><th>문의자</th><th>내용</th><th>접수일</th><th>상태</th><th></th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>`;
@@ -3625,6 +3676,16 @@
   document.getElementById("supportlistmodal").addEventListener("click", (e) => { if(e.target.id === "supportlistmodal") document.getElementById("supportlistmodal").classList.remove("show"); });
   document.getElementById("supportlist-refresh").addEventListener("click", loadSupportTickets);
   document.getElementById("supportlist-body").addEventListener("click", async (e) => {
+    const replyBtn = e.target.closest(".support-reply-btn");
+    if(replyBtn){
+      openSupportReplyModal({
+        id: replyBtn.getAttribute("data-id"),
+        type: replyBtn.getAttribute("data-type"),
+        nickname: replyBtn.getAttribute("data-nickname"),
+        body: replyBtn.getAttribute("data-body"),
+      });
+      return;
+    }
     const resolveBtn = e.target.closest(".support-resolve-btn");
     if(resolveBtn){
       const id = resolveBtn.getAttribute("data-id");
@@ -3658,47 +3719,207 @@
     }
   });
 
-  function openSupportModal(){
+  // ---------- 문의 답변(쪽지) 모달 (관리자 전용) ----------
+  let supportReplyTicketId = null;
+  function renderSupportReplies(replies){
+    const list = document.getElementById("supportreply-list");
+    if(!replies.length){
+      list.innerHTML = '<div class="discuss-empty">아직 답변한 내용이 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = replies.map((r) => `
+      <div class="comment">
+        <div class="comment-avatar">운</div>
+        <div class="comment-body">
+          <div class="comment-headrow"><span class="comment-nick">운영자</span><span class="comment-time">${formatDateTime(r.created_at)}</span></div>
+          <div class="comment-text">${escapeHtml(r.body)}</div>
+        </div>
+      </div>`).join("");
+    list.scrollTop = list.scrollHeight;
+  }
+  async function loadSupportReplies(ticketId){
+    const list = document.getElementById("supportreply-list");
+    list.innerHTML = '<div class="discuss-empty">불러오는 중...</div>';
+    try{
+      const data = await adminFetch(`/api/admin/support-replies?ticketId=${encodeURIComponent(ticketId)}`);
+      renderSupportReplies(data.replies || []);
+    }catch(err){
+      list.innerHTML = `<div class="discuss-empty">${escapeHtml(err.message || "불러오지 못했습니다")}</div>`;
+    }
+  }
+  function openSupportReplyModal(ticket){
+    supportReplyTicketId = ticket.id;
+    document.getElementById("supportreply-title").textContent = `${ticket.nickname || "닉네임 없음"}님의 문의`;
+    document.getElementById("supportreply-meta").textContent = ticket.type || "";
+    document.getElementById("supportreply-original").textContent = ticket.body || "";
+    document.getElementById("supportreply-input").value = "";
+    document.getElementById("supportreply-send").disabled = true;
+    document.getElementById("supportreplymodal").classList.add("show");
+    loadSupportReplies(ticket.id);
+  }
+  document.getElementById("supportreply-close").addEventListener("click", () => document.getElementById("supportreplymodal").classList.remove("show"));
+  document.getElementById("supportreplymodal").addEventListener("click", (e) => { if(e.target.id === "supportreplymodal") document.getElementById("supportreplymodal").classList.remove("show"); });
+  document.getElementById("supportreply-input").addEventListener("input", () => {
+    document.getElementById("supportreply-send").disabled = !document.getElementById("supportreply-input").value.trim();
+  });
+  async function sendSupportReply(){
+    const input = document.getElementById("supportreply-input");
+    const text = input.value.trim();
+    if(!text || !supportReplyTicketId) return;
+    const sendBtn = document.getElementById("supportreply-send");
+    sendBtn.disabled = true;
+    try{
+      await adminFetch("/api/admin/support-replies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticketId: supportReplyTicketId, body: text }),
+      });
+      input.value = "";
+      loadSupportReplies(supportReplyTicketId);
+    }catch(err){
+      showToast(err.message || "답변을 보내지 못했습니다");
+      sendBtn.disabled = false;
+    }
+  }
+  document.getElementById("supportreply-send").addEventListener("click", sendSupportReply);
+  document.getElementById("supportreply-input").addEventListener("keydown", (e) => {
+    if(e.key === "Enter" && !document.getElementById("supportreply-send").disabled) sendSupportReply();
+  });
+
+  // ---------- 고객센터 문의 (회원 전용: 로그인해야 이용 가능) ----------
+  let myTicketsCache = [];
+  let myRepliesByTicket = {};
+  function showSupportListView(){
+    document.getElementById("support-modal-title").textContent = "고객센터 문의";
+    document.getElementById("support-list-section").style.display = "";
+    document.getElementById("support-compose-section").style.display = "none";
+  }
+  function showSupportComposeView(){
+    document.getElementById("support-modal-title").textContent = "새 문의 작성";
+    document.getElementById("support-list-section").style.display = "none";
+    document.getElementById("support-compose-section").style.display = "";
     document.getElementById("support-type-input").value = "일반 문의";
-    document.getElementById("support-email-input").value = "";
     document.getElementById("support-body-input").value = "";
     document.getElementById("support-body-count").textContent = "0/500";
     document.getElementById("support-submit").disabled = true;
+  }
+  function renderMyTicketsList(){
+    const el = document.getElementById("support-history-list");
+    if(!myTicketsCache.length){
+      el.innerHTML = '<div class="discuss-empty">아직 문의 내역이 없습니다.<br>위 "+ 새 문의 작성" 버튼으로 문의를 남겨보세요.</div>';
+      return;
+    }
+    el.innerHTML = myTicketsCache.map((t) => {
+      const replies = myRepliesByTicket[t.id] || [];
+      const replyHtml = replies.map((r) => `
+        <div style="margin-top:8px;padding:10px 12px;background:var(--bg-2);border-radius:10px;border:1px solid var(--line-soft)">
+          <div style="font-size:11.5px;font-weight:700;color:var(--accent);margin-bottom:4px">운영자 답변 · ${formatDateTime(r.created_at)}</div>
+          <div style="font-size:13px;line-height:1.5;white-space:pre-wrap">${escapeHtml(r.body)}</div>
+        </div>`).join("");
+      return `
+        <div style="padding:12px 0;border-bottom:1px solid var(--line-soft)">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <span class="chip pending" style="background:var(--panel-2);color:var(--text-dim)">${escapeHtml(t.type || "-")}</span>
+            <span style="font-size:11.5px;color:var(--text-faint)">${formatDateTime(t.created_at)}</span>
+          </div>
+          <div style="font-size:13.5px;line-height:1.5;margin-top:8px;white-space:pre-wrap">${escapeHtml(t.body || "")}</div>
+          ${replyHtml}
+        </div>`;
+    }).join("");
+  }
+  async function loadMyTickets(){
+    const el = document.getElementById("support-history-list");
+    el.innerHTML = '<div class="discuss-empty">불러오는 중...</div>';
+    if(!window.psSupabase || !window.psCurrentUser){
+      el.innerHTML = '<div class="discuss-empty">불러오지 못했습니다.</div>';
+      return;
+    }
+    try{
+      const [{ data: tickets, error: tErr }, { data: replies, error: rErr }] = await Promise.all([
+        window.psSupabase.from("support_tickets").select("*").order("created_at", { ascending: false }),
+        window.psSupabase.from("support_replies").select("*").order("created_at", { ascending: true }),
+      ]);
+      if(tErr) throw tErr;
+      if(rErr) throw rErr;
+      myTicketsCache = tickets || [];
+      myRepliesByTicket = {};
+      (replies || []).forEach((r) => {
+        if(!myRepliesByTicket[r.ticket_id]) myRepliesByTicket[r.ticket_id] = [];
+        myRepliesByTicket[r.ticket_id].push(r);
+      });
+      renderMyTicketsList();
+      const unreadIds = (replies || []).filter((r) => !r.is_read).map((r) => r.id);
+      if(unreadIds.length){
+        await window.psSupabase.from("support_replies").update({ is_read: true }).in("id", unreadIds);
+        refreshSupportUnreadBadge();
+      }
+    }catch(err){
+      el.innerHTML = `<div class="discuss-empty">${escapeHtml((err && err.message) || "불러오지 못했습니다")}</div>`;
+    }
+  }
+  async function refreshSupportUnreadBadge(){
+    const dots = [document.getElementById("support-unread-dot"), document.getElementById("support-unread-dot-more")];
+    if(!window.psSupabase || !window.psCurrentUser){
+      dots.forEach((d) => d && d.classList.remove("show"));
+      return;
+    }
+    try{
+      const { count } = await window.psSupabase
+        .from("support_replies")
+        .select("id", { count: "exact", head: true })
+        .eq("is_read", false);
+      const has = !!(count && count > 0);
+      dots.forEach((d) => d && d.classList.toggle("show", has));
+    }catch(e){ /* ignore */ }
+  }
+  function openSupportModal(){
+    if(!window.psCurrentUser){
+      showToast("로그인 후 문의를 남기실 수 있어요");
+      openMemberLoginModal();
+      return;
+    }
+    showSupportListView();
     document.getElementById("supportmodal").classList.add("show");
+    loadMyTickets();
   }
   document.getElementById("supportbtn").addEventListener("click", openSupportModal);
   document.getElementById("more-supportbtn").addEventListener("click", () => {
     document.getElementById("moresheet").classList.remove("show");
     openSupportModal();
   });
+  document.getElementById("support-new-btn").addEventListener("click", showSupportComposeView);
+  document.getElementById("support-back-btn").addEventListener("click", showSupportListView);
   function checkSupportValid(){
-    const email = document.getElementById("support-email-input").value.trim();
     const body = document.getElementById("support-body-input").value;
     document.getElementById("support-body-count").textContent = `${body.length}/500`;
-    document.getElementById("support-submit").disabled = !(email && body.trim());
+    document.getElementById("support-submit").disabled = !body.trim();
   }
-  document.getElementById("support-email-input").addEventListener("input", checkSupportValid);
   document.getElementById("support-body-input").addEventListener("input", checkSupportValid);
   document.getElementById("support-close").addEventListener("click", () => document.getElementById("supportmodal").classList.remove("show"));
   document.getElementById("supportmodal").addEventListener("click", (e) => { if(e.target.id === "supportmodal") document.getElementById("supportmodal").classList.remove("show"); });
   document.getElementById("support-submit").addEventListener("click", async () => {
     const type = document.getElementById("support-type-input").value;
-    const email = document.getElementById("support-email-input").value.trim();
     const bodyText = document.getElementById("support-body-input").value.trim();
     const btn = document.getElementById("support-submit");
     btn.disabled = true;
     try{
+      if(!window.psSupabase || !window.psCurrentUser) throw new Error("로그인이 필요합니다");
+      const { data: sessionData } = await window.psSupabase.auth.getSession();
+      const token = sessionData && sessionData.session && sessionData.session.access_token;
+      if(!token) throw new Error("로그인이 만료되었습니다. 다시 로그인해주세요.");
       const res = await fetch("/api/support", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, email, body: bodyText }),
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ type, body: bodyText }),
       });
       const data = await res.json().catch(() => ({}));
       if(!res.ok) throw new Error(data.error || "문의 접수에 실패했습니다");
-      document.getElementById("supportmodal").classList.remove("show");
       showToast("문의가 접수되었습니다. 빠른 시일 내에 답변드리겠습니다.");
+      showSupportListView();
+      loadMyTickets();
     }catch(err){
       showToast(err.message || "문의 접수에 실패했습니다");
+    }finally{
       btn.disabled = false;
     }
   });
