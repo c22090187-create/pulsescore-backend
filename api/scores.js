@@ -123,7 +123,16 @@ module.exports = async function handler(req, res) {
     matches = await attachKoreanNames(matches);
 
     setCache(cacheKey, matches, CACHE_TTL_SECONDS);
-    res.status(200).json({ source: "live", matches });
+    const payload = { source: "live", matches };
+    if (matches.length === 0) {
+      // 임시 진단용: 왜 0건인지 원인을 바로 확인하기 위해 API-Sports의 원본 응답 일부를 함께 내려줍니다.
+      payload.debug = {
+        results: raw.results,
+        errors: raw.errors,
+        paging: raw.paging,
+      };
+    }
+    res.status(200).json(payload);
   } catch (err) {
     console.error(err);
     res.status(502).json({
