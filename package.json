@@ -5,5 +5,8 @@
   "description": "PULSE SCORE - 스포츠 데이터 프록시 서버 (Vercel Serverless Functions)",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
   }
 }
