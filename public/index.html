@@ -95,7 +95,7 @@
   .iconbtn svg{ width:17px; height:17px; }
   .iconbtn .dot{ position:absolute; top:6px; right:6px; width:6px; height:6px; border-radius:50%; background: var(--live); }
   .avatarbtn{
-    width:34px; height:34px; border-radius:50%; background: var(--accent-dim); color: var(--accent);
+    width:34px; height:34px; border-radius:50%; background: var(--accent-dim); color: var(--text);
     border:1px solid var(--accent-line); font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;
   }
   .ghostbtn{
@@ -122,7 +122,7 @@
     display:flex; flex-direction:column; align-items:center; gap:4px; padding:4px 10px;
   }
   .bottomnav button svg{ width:20px; height:20px; }
-  .bottomnav button.active{ color: var(--accent); }
+  .bottomnav button.active{ color: var(--text); }
   @media (max-width: 760px){ .bottomnav{ display:flex; } body{ padding-bottom: 64px; } }
 
   .moresheet{
@@ -142,9 +142,10 @@
   .moresheet-list button svg{ width:19px; height:19px; color: var(--text-dim); flex-shrink:0; }
 
   /* ---------- hero banner ---------- */
-  .herobanner{ width:100%; overflow:hidden; line-height:0; }
-  .herobanner-img{ width:100%; height:auto; max-height:360px; object-fit:cover; object-position:top; display:block; }
-  @media (max-width:760px){ .herobanner-img{ max-height:160px; } }
+  /* 이미지 속 문구(제목+부제)가 화면 너비와 상관없이 항상 온전히 보이도록,
+     고정 높이(px) 대신 이미지 비율(aspect-ratio)로 크롭 비율을 고정합니다. */
+  .herobanner{ width:100%; overflow:hidden; line-height:0; aspect-ratio: 941 / 300; }
+  .herobanner-img{ width:100%; height:100%; object-fit:cover; object-position:top; display:block; }
 
   /* ---------- shell ---------- */
   .shell{ max-width: 1180px; margin: 0 auto; padding: 26px clamp(16px,4vw,40px) 90px; }
@@ -176,7 +177,7 @@
   }
   .scoreshero .eyebrow{ font-size:11.5px; font-weight:700; color: var(--text-faint); letter-spacing:.08em; margin-bottom:8px; }
   .scoreshero h1{ font-size: clamp(26px,4vw,36px); font-weight:800; letter-spacing:-0.02em; margin:0; }
-  .scoreshero h1 .dot{ color: var(--accent); }
+  .scoreshero h1 .dot{ color: var(--text); }
   .scoreshero .kst{ font-size:12.5px; color: var(--text-dim); display:flex; align-items:center; gap:6px; }
   .scoreshero .kst b{ color: var(--text); font-weight:700; }
 
@@ -221,7 +222,7 @@
     background:none; border:none; color: var(--text-faint); flex-shrink:0;
     width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center;
   }
-  .admin-edit-btn:hover{ color: var(--accent); background: var(--accent-dim); }
+  .admin-edit-btn:hover{ color: var(--text); background: var(--accent-dim); }
   .admin-edit-btn.sm{ width:20px; height:20px; }
 
   .avatarbtn.admin-on{ background: var(--live-dim); color: var(--live); border-color: rgba(255,90,95,0.35); }
@@ -288,7 +289,7 @@
     border:1px solid var(--line); background: var(--panel); color: var(--text-dim);
     font-size:13.5px; font-weight:700; padding:8px 15px; border-radius:999px; flex-shrink:0;
   }
-  .sportchips button.active{ background: var(--accent-dim); color: var(--accent); border-color: var(--accent-line); }
+  .sportchips button.active{ background: var(--accent-dim); color: var(--text); border-color: var(--accent-line); }
 
   .leaguegroup{ margin-bottom:16px; }
   .leaguehead{
@@ -461,7 +462,7 @@
   .comment-nick{ font-size:13px; font-weight:700; }
   .comment-time{ font-size:11.5px; color: var(--text-faint); }
   .comment-text{ font-size:13.5px; color: var(--text); line-height:1.5; word-break:break-word; }
-  .comment.me .comment-avatar{ background: var(--panel-2); color: var(--accent); border:1px solid var(--accent-line); }
+  .comment.me .comment-avatar{ background: var(--panel-2); color: var(--text); border:1px solid var(--accent-line); }
 
   .discuss-empty{ text-align:center; color: var(--text-faint); font-size:13px; padding: 30px 10px; }
 
@@ -515,7 +516,7 @@
   .dm-player-slot{ flex-shrink:0; }
 
   .scoresfoot{ margin-top:16px; display:flex; align-items:center; gap:9px; color: var(--text-faint); font-size:12.5px; }
-  .scoresfoot svg{ width:16px; height:16px; color: var(--accent); flex-shrink:0; }
+  .scoresfoot svg{ width:16px; height:16px; color: var(--text); flex-shrink:0; }
 
   /* ===== 3-column scores layout ===== */
   .scoresgrid{ display:grid; grid-template-columns: 196px 1fr 280px; gap:18px; align-items:start; }
@@ -537,8 +538,8 @@
     color: var(--text-dim); font-size:13px; font-weight:700; padding:8px 8px; border-radius:8px; text-align:left;
   }
   .leaguepick button .cnt{ font-size:11.5px; color: var(--text-faint); font-weight:700; }
-  .leaguepick button.active{ background: var(--accent-dim); color: var(--accent); }
-  .leaguepick button.active .cnt{ color: var(--accent); }
+  .leaguepick button.active{ background: var(--accent-dim); color: var(--text); }
+  .leaguepick button.active .cnt{ color: var(--text); }
   .leaguepick-sporthead{
     display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700; color: var(--text-faint);
     letter-spacing:.04em; padding:10px 8px 4px; text-transform:uppercase;
@@ -575,9 +576,9 @@
   .spotlight-body .venue{ font-size:11.5px; color: var(--text-faint); margin-bottom:8px; }
   .spotlight-event{ display:flex; gap:8px; padding:6px 0; border-bottom:1px solid var(--line-soft); }
   .spotlight-event:last-child{ border-bottom:none; }
-  .spotlight-event .min{ color: var(--accent); font-weight:700; font-size:11.5px; width:28px; flex-shrink:0; }
+  .spotlight-event .min{ color: var(--text); font-weight:700; font-size:11.5px; width:28px; flex-shrink:0; }
   .spotlight-favbtn{
-    width:100%; margin-top:12px; border:none; border-radius: var(--radius-s); background: var(--accent-dim); color: var(--accent);
+    width:100%; margin-top:12px; border:none; border-radius: var(--radius-s); background: var(--accent-dim); color: var(--text);
     font-weight:700; font-size:13px; padding:11px; display:flex; align-items:center; justify-content:center; gap:6px;
   }
   .spotlight-favbtn.active{ background: var(--accent); color:#111111; }
@@ -598,7 +599,7 @@
   .boardpost .bp-pin{ font-size:11px; font-weight:800; color: var(--warn); background: var(--warn-dim); padding:2px 8px; border-radius:6px; margin-right:8px; }
   .boardpost .bp-title{ font-size:14.5px; font-weight:700; margin-bottom:6px; }
   .boardpost .bp-meta{ font-size:12px; color: var(--text-faint); display:flex; gap:8px; align-items:center; }
-  .boardpost .bp-price{ font-size:14px; font-weight:800; color: var(--accent); flex-shrink:0; white-space:nowrap; }
+  .boardpost .bp-price{ font-size:14px; font-weight:800; color: var(--text); flex-shrink:0; white-space:nowrap; }
   .boardpost .bp-comments{ font-size:12px; color: var(--text-dim); font-weight:700; flex-shrink:0; display:flex; align-items:center; gap:4px; }
 
   .boardgrid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -678,7 +679,7 @@
     background: linear-gradient(135deg, rgba(255,212,0,0.14), transparent); border:1px solid var(--accent-line);
     border-radius: var(--radius-l); padding:32px 24px; text-align:center; margin-bottom:24px;
   }
-  .premium-hero .badge{ display:inline-flex; align-items:center; gap:6px; background: var(--accent-dim); color: var(--accent); font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; margin-bottom:14px; }
+  .premium-hero .badge{ display:inline-flex; align-items:center; gap:6px; background: var(--accent-dim); color: var(--text); font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; margin-bottom:14px; }
   .premium-hero h2{ font-size:clamp(20px,3vw,26px); margin:0 0 8px; font-weight:800; }
   .premium-hero p{ margin:0 0 18px; color: var(--text-dim); font-size:14px; }
   .premium-hero button{ border:none; background: var(--accent); color:#111111; font-weight:700; font-size:14.5px; padding:13px 28px; border-radius:999px; }
@@ -686,7 +687,7 @@
   .premium-lockcard{ position:relative; background: var(--panel); border:1px solid var(--line); border-radius: var(--radius-l); padding:20px; overflow:hidden; }
   .premium-lockcard .blurred{ filter: blur(5px); user-select:none; font-size:13px; color: var(--text-dim); line-height:1.6; }
   .premium-lockcard .locktag{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px; background: rgba(255,255,255,0.6); }
-  .premium-lockcard .locktag svg{ width:20px; height:20px; color: var(--accent); }
+  .premium-lockcard .locktag svg{ width:20px; height:20px; color: var(--text); }
   .premium-lockcard .locktag span{ font-size:12px; font-weight:700; color: var(--text); }
   .premium-lockcard h4{ margin:0 0 8px; font-size:13.5px; font-weight:700; }
 
@@ -700,7 +701,7 @@
   .statcard{ background: var(--panel); border:1px solid var(--line); border-radius: var(--radius-m); padding: 12px 20px; min-width: 92px; text-align:center; }
   .statcard .label{ font-size:12px; color: var(--text-dim); margin-bottom:4px; }
   .statcard .value{ font-size:22px; font-weight:700; }
-  .statcard.accent .value{ color: var(--accent); }
+  .statcard.accent .value{ color: var(--text); }
 
   .gridwrap{ display:grid; grid-template-columns: 1.55fr 1fr; gap:20px; align-items:start; }
   @media (max-width: 980px){ .gridwrap{ grid-template-columns: 1fr; } }
@@ -756,7 +757,7 @@
   .savebtn:active{ transform: scale(0.98); }
 
   .footnote{ margin-top:18px; padding-top:16px; border-top:1px solid var(--line-soft); display:flex; align-items:center; gap:10px; color: var(--text-faint); font-size:12.5px; }
-  .footnote svg{ width:16px; height:16px; flex-shrink:0; color: var(--accent); }
+  .footnote svg{ width:16px; height:16px; flex-shrink:0; color: var(--text); }
 
   .history{ margin-top: 22px; }
   .historyhead{ display:flex; align-items:baseline; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
@@ -773,7 +774,7 @@
   .rlabel{ display:block; font-size:11px; color: var(--text-faint); margin-bottom:3px; }
   .rval{ font-weight:700; }
   .chip{ display:inline-block; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; }
-  .chip.ok{ background: var(--accent-dim); color: var(--accent); }
+  .chip.ok{ background: var(--accent-dim); color: var(--text); }
   .chip.fail{ background: var(--bad-dim); color: var(--bad); }
   .chip.void{ background: rgba(143,167,155,0.14); color: var(--text-dim); }
   .chip.pending{ background: var(--warn-dim); color: var(--warn); }
@@ -786,7 +787,7 @@
     display:flex; align-items:center; gap:8px; box-shadow: 0 12px 30px rgba(0,0,0,0.35);
     transition: opacity .25s ease, transform .25s ease; pointer-events:none; z-index:50; white-space:nowrap;
   }
-  .toast svg{ width:16px; height:16px; color: var(--accent); flex-shrink:0; }
+  .toast svg{ width:16px; height:16px; color: var(--text); flex-shrink:0; }
   .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
 
   ::selection{ background: var(--accent); color:#111111; }
@@ -822,6 +823,7 @@
     <button class="iconbtn" id="notifbtn" aria-label="알림"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 01-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="dot"></span></button>
     <button class="iconbtn adminonly-btn" id="admintoolsbtn" aria-label="관리자 메뉴" title="관리자 메뉴"><svg viewBox="0 0 24 24" fill="none"><path d="M10.3 3.5c.3-1.3 2.1-1.3 2.4 0l.2.9a1.6 1.6 0 002.3 1l.8-.5c1.1-.7 2.4.6 1.7 1.7l-.5.8a1.6 1.6 0 001 2.3l.9.2c1.3.3 1.3 2.1 0 2.4l-.9.2a1.6 1.6 0 00-1 2.3l.5.8c.7 1.1-.6 2.4-1.7 1.7l-.8-.5a1.6 1.6 0 00-2.3 1l-.2.9c-.3 1.3-2.1 1.3-2.4 0l-.2-.9a1.6 1.6 0 00-2.3-1l-.8.5c-1.1.7-2.4-.6-1.7-1.7l.5-.8a1.6 1.6 0 00-1-2.3l-.9-.2c-1.3-.3-1.3-2.1 0-2.4l.9-.2a1.6 1.6 0 001-2.3l-.5-.8c-.7-1.1.6-2.4 1.7-1.7l.8.5a1.6 1.6 0 002.3-1l.2-.9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/></svg></button>
     <button class="avatarbtn" id="avatarbtn">PS</button>
+    <button class="ghostbtn hide-tablet" id="mymsgbtn">쪽지함<span class="unread-dot" id="mymsg-unread-dot"></span></button>
     <button class="ghostbtn hide-tablet" id="supportbtn">고객센터 문의<span class="unread-dot" id="support-unread-dot"></span></button>
     <button class="primarybtn-sm" id="loginbtn">회원 로그인</button>
   </div>
@@ -865,7 +867,7 @@
         <h1>경기의 모든 순간<span class="dot">.</span></h1>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
-        <span id="realdata-badge" style="display:none;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--accent);background:var(--accent-dim);padding:4px 10px;border-radius:999px">
+        <span id="realdata-badge" style="display:none;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color: var(--text);background:var(--accent-dim);padding:4px 10px;border-radius:999px">
           <span style="width:6px;height:6px;border-radius:50%;background:var(--accent)"></span>실시간 데이터 연동됨
         </span>
         <div class="kst">모든 경기 시간 <b>KST</b></div>
@@ -1067,6 +1069,7 @@
       <button class="adminonly-btn" id="more-supportlistbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18h.01M9.5 9a2.5 2.5 0 015 0c0 1.5-1.5 2-2 2.7-.3.4-.5.9-.5 1.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg><span>문의내역 관리</span></button>
       <div style="height:1px;background:var(--line-soft);margin:6px 4px"></div>
       <button id="more-supportbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18h.01M9.5 9a2.5 2.5 0 015 0c0 1.5-1.5 2-2 2.7-.3.4-.5.9-.5 1.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg><span>고객센터 문의</span><span class="unread-dot" id="support-unread-dot-more"></span></button>
+      <button id="more-mymsgbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v13H7l-3 3V4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>쪽지함</span><span class="unread-dot" id="mymsg-unread-dot-more"></span></button>
     </div>
   </div>
 </div>
@@ -1089,6 +1092,29 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="adminmsgmodal">
+  <div class="discussmodal" style="max-width:520px">
+    <div class="discuss-head">
+      <div class="discuss-headinfo">
+        <span class="dh-teams">쪽지 보내기</span>
+        <span class="dh-meta" id="adminmsg-target-label">-</span>
+      </div>
+      <button class="modal-close" id="adminmsg-close" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="discuss-list" id="adminmsg-history" style="padding:14px 16px">
+      <div class="discuss-empty">불러오는 중...</div>
+    </div>
+    <div class="discuss-inputrow">
+      <input type="text" id="adminmsg-input" placeholder="이 회원에게 보낼 쪽지 내용을 입력하세요" maxlength="500">
+      <button class="discuss-sendbtn" id="adminmsg-send" disabled>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 12l16-8-6 16-2-7-8-1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="supportlistmodal">
   <div class="discussmodal" style="max-width:680px">
     <div class="discuss-head">
@@ -1102,6 +1128,23 @@
       </button>
     </div>
     <div class="discuss-list" id="supportlist-body" style="padding:14px 16px">
+      <div class="discuss-empty">불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="mymsgmodal">
+  <div class="discussmodal" style="max-width:560px">
+    <div class="discuss-head">
+      <div class="discuss-headinfo">
+        <span class="dh-teams">쪽지함</span>
+        <span class="dh-meta">운영자가 보낸 쪽지를 확인하세요</span>
+      </div>
+      <button class="modal-close" id="mymsg-close" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="discuss-list" id="mymsg-body" style="padding:14px 16px">
       <div class="discuss-empty">불러오는 중...</div>
     </div>
   </div>
@@ -1173,10 +1216,6 @@
       </button>
     </div>
     <div class="writemodal-body">
-      <div class="sportcards" id="login-subtabs" style="grid-template-columns:1fr 1fr">
-        <button class="sportcard active" data-logintype="member">회원 로그인</button>
-        <button class="sportcard" data-logintype="admin">관리자 로그인</button>
-      </div>
       <input type="text" id="login-id-input" placeholder="아이디 또는 이메일">
       <input type="text" id="login-nickname-input" placeholder="닉네임" style="display:none">
       <input type="tel" id="login-phone-input" placeholder="전화번호" style="display:none">
@@ -1184,7 +1223,7 @@
       <input type="password" id="login-pw2-input" placeholder="비밀번호 확인" style="display:none">
       <div class="write-charcount" id="login-helper-text" style="text-align:left">데모용 화면이라 아이디·비밀번호를 입력하면 그대로 로그인됩니다.</div>
       <div id="login-authtoggle-row" style="text-align:right;margin-top:2px">
-        <button type="button" id="login-authtoggle" style="background:none;border:none;color:var(--accent);font-size:12.5px;font-weight:700;padding:4px 2px">회원가입</button>
+        <button type="button" id="login-authtoggle" style="background:none;border:none;color: var(--text);font-size:12.5px;font-weight:700;padding:4px 2px">회원가입</button>
       </div>
     </div>
     <div class="writemodal-foot"><button id="login-submit" disabled>로그인</button></div>
@@ -3244,27 +3283,20 @@
     window.psCurrentUser = null;
     applyMemberUI();
     refreshSupportUnreadBadge();
+    refreshMsgUnreadBadge();
   }
-  // 관리자 모드는 오직 로그인 창의 "관리자 로그인" 탭(비밀번호 확인)을 통해서만
-  // 켤 수 있습니다. 아바타 버튼은 관리자일 때는 로그아웃, 아닐 때는 관리자
-  // 로그인 창으로 안내하는 역할만 합니다(비밀번호 없이 즉시 전환되지 않음).
+  // 관리자 모드는 이 페이지에서는 켤 수 없습니다. 별도의 관리자 전용 페이지
+  // (/admin.html)에서 비밀번호를 확인한 뒤에만 켜지며, 이 화면(회원용 페이지)에는
+  // 관리자 로그인으로 가는 버튼이나 탭이 전혀 없습니다. 아바타 버튼은 이미 관리자
+  // 모드일 때는 로그아웃 역할만 하고, 그 외에는 평소처럼 회원 로그인/내 계정으로 안내합니다.
   document.getElementById("avatarbtn").addEventListener("click", () => {
     if(isAdmin){
       exitAdminMode();
       showToast("관리자 모드를 종료했습니다");
       return;
     }
-    document.getElementById("login-id-input").value = "";
-    document.getElementById("login-nickname-input").value = "";
-    document.getElementById("login-phone-input").value = "";
-    document.getElementById("login-pw-input").value = "";
-    document.getElementById("login-pw2-input").value = "";
-    document.getElementById("login-submit").disabled = true;
-    loginType = "admin";
-    authMode = "signin";
-    document.querySelectorAll("#login-subtabs button").forEach(b => b.classList.toggle("active", b.getAttribute("data-logintype") === "admin"));
-    renderLoginModal();
-    document.getElementById("loginmodal").classList.add("show");
+    if(window.psCurrentUser){ openAccountModal(); return; }
+    openMemberLoginModal();
   });
 
   // ===================== 로그인 / 회원가입 / 고객센터 문의 =====================
@@ -3326,6 +3358,7 @@
     clearLocalBookmarks();
     clearLocalPredictions();
     refreshSupportUnreadBadge();
+    refreshMsgUnreadBadge();
     document.getElementById("accountmodal").classList.remove("show");
     showToast("로그아웃되었습니다");
   });
@@ -3339,7 +3372,6 @@
     document.getElementById("login-submit").disabled = true;
     loginType = "member";
     authMode = "signin";
-    document.querySelectorAll("#login-subtabs button").forEach(b => b.classList.toggle("active", b.getAttribute("data-logintype") === "member"));
     renderLoginModal();
     document.getElementById("loginmodal").classList.add("show");
   }
@@ -3349,15 +3381,6 @@
       return;
     }
     openMemberLoginModal();
-  });
-  document.getElementById("login-subtabs").addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-logintype]");
-    if(!btn) return;
-    loginType = btn.getAttribute("data-logintype");
-    authMode = "signin";
-    document.querySelectorAll("#login-subtabs button").forEach(b => b.classList.toggle("active", b === btn));
-    renderLoginModal();
-    checkLoginValid();
   });
   document.getElementById("login-authtoggle").addEventListener("click", () => {
     authMode = authMode === "signin" ? "signup" : "signin";
@@ -3382,37 +3405,8 @@
   document.getElementById("loginmodal").addEventListener("click", (e) => { if(e.target.id === "loginmodal") document.getElementById("loginmodal").classList.remove("show"); });
 
   document.getElementById("login-submit").addEventListener("click", async () => {
-    // ---- 관리자 탭: 입력한 비밀번호를 서버(ADMIN_SECRET)로 검증 ----
-    if(loginType === "admin"){
-      const secret = document.getElementById("login-pw-input").value.trim();
-      const submitBtn = document.getElementById("login-submit");
-      submitBtn.disabled = true;
-      const prevLabel = submitBtn.textContent;
-      submitBtn.textContent = "확인 중...";
-      try{
-        const res = await fetch("/api/admin/verify", { headers: { "x-admin-secret": secret } });
-        if(!res.ok){
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || "관리자 비밀번호가 올바르지 않습니다");
-        }
-        await exitMemberSession();
-        window.psAdminSecret = secret;
-        try{ sessionStorage.setItem("pulsescore_admin_secret", secret); }catch(e){}
-        isAdmin = true;
-        try{ localStorage.setItem("pulsescore_admin", "1"); }catch(e){}
-        applyAdminUI();
-        document.getElementById("loginmodal").classList.remove("show");
-        showToast("관리자로 로그인되었습니다");
-      } catch(err){
-        showToast(err.message || "관리자 로그인에 실패했습니다");
-      } finally {
-        submitBtn.textContent = prevLabel;
-        checkLoginValid();
-      }
-      return;
-    }
-
-    // ---- 회원 탭: Supabase Auth ----
+    // 이 페이지의 로그인 창은 회원 전용입니다(관리자 로그인은 /admin.html 별도 페이지).
+    // ---- 회원: Supabase Auth ----
     const email = document.getElementById("login-id-input").value.trim();
     const password = document.getElementById("login-pw-input").value.trim();
     const nickname = document.getElementById("login-nickname-input").value.trim();
@@ -3450,6 +3444,7 @@
           loadBookmarksFromSupabase();
           loadPredictionsFromSupabase();
           refreshSupportUnreadBadge();
+          refreshMsgUnreadBadge();
           document.getElementById("loginmodal").classList.remove("show");
           showToast("가입 완료! 회원으로 로그인되었습니다");
         }
@@ -3462,6 +3457,7 @@
         loadBookmarksFromSupabase();
         loadPredictionsFromSupabase();
         refreshSupportUnreadBadge();
+        refreshMsgUnreadBadge();
         document.getElementById("loginmodal").classList.remove("show");
         showToast("회원으로 로그인되었습니다");
       }
@@ -3490,6 +3486,7 @@
             loadBookmarksFromSupabase();
             loadPredictionsFromSupabase();
             refreshSupportUnreadBadge();
+            refreshMsgUnreadBadge();
           }
         }).catch(()=>{});
       } else if(tries > 20){
@@ -3542,6 +3539,9 @@
         <td style="white-space:nowrap;font-size:12.5px;color:var(--text-dim)">${formatDateTime(m.createdAt)}</td>
         <td style="white-space:nowrap;font-size:12.5px">${m.emailConfirmed ? '<span class="chip ok">인증됨</span>' : '<span class="chip pending">미인증</span>'}</td>
         <td style="text-align:right;white-space:nowrap">
+          <button class="admin-edit-btn member-msg-btn" data-id="${escapeHtml(m.id)}" data-email="${escapeHtml(m.email || "")}" aria-label="쪽지 보내기" title="쪽지 보내기">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 4h16v13H7l-3 3V4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </button>
           <button class="admin-edit-btn member-edit-btn" data-id="${escapeHtml(m.id)}" data-nickname="${escapeHtml(m.nickname || "")}" aria-label="닉네임 수정" title="닉네임 수정">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
           </button>
@@ -3583,6 +3583,11 @@
   document.getElementById("membersmodal").addEventListener("click", (e) => { if(e.target.id === "membersmodal") document.getElementById("membersmodal").classList.remove("show"); });
   document.getElementById("members-refresh").addEventListener("click", loadMembers);
   document.getElementById("members-body").addEventListener("click", async (e) => {
+    const msgBtn = e.target.closest(".member-msg-btn");
+    if(msgBtn){
+      openAdminMsgModal(msgBtn.getAttribute("data-id"), msgBtn.getAttribute("data-email"));
+      return;
+    }
     const editBtn = e.target.closest(".member-edit-btn");
     if(editBtn){
       const id = editBtn.getAttribute("data-id");
@@ -3620,6 +3625,72 @@
       showToast(err.message || "삭제하지 못했습니다");
       btn.disabled = false;
     }
+  });
+
+  // ===================== 쪽지 보내기 (관리자 전용) =====================
+  let adminMsgTargetId = null;
+  function renderAdminMsgHistory(messages){
+    const el = document.getElementById("adminmsg-history");
+    if(!messages.length){
+      el.innerHTML = '<div class="discuss-empty">아직 보낸 쪽지가 없습니다.</div>';
+      return;
+    }
+    el.innerHTML = messages.map((m) => `
+      <div style="padding:10px 0;border-bottom:1px solid var(--line-soft)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="font-size:11.5px;font-weight:700;color:var(--text-dim)">운영자</span>
+          <span style="font-size:11px;color:var(--text-faint)">${formatDateTime(m.created_at)} ${m.is_read ? "· 읽음" : "· 안읽음"}</span>
+        </div>
+        <div style="font-size:13.5px;line-height:1.5;margin-top:4px;white-space:pre-wrap">${escapeHtml(m.body || "")}</div>
+      </div>`).join("");
+    el.scrollTop = el.scrollHeight;
+  }
+  async function loadAdminMsgHistory(){
+    const el = document.getElementById("adminmsg-history");
+    el.innerHTML = '<div class="discuss-empty">불러오는 중...</div>';
+    try{
+      const data = await adminFetch(`/api/admin/messages?userId=${encodeURIComponent(adminMsgTargetId)}`);
+      renderAdminMsgHistory(data.messages || []);
+    }catch(err){
+      el.innerHTML = `<div class="discuss-empty">${escapeHtml(err.message || "불러오지 못했습니다")}</div>`;
+    }
+  }
+  function openAdminMsgModal(id, email){
+    adminMsgTargetId = id;
+    document.getElementById("adminmsg-target-label").textContent = email || "-";
+    document.getElementById("adminmsg-input").value = "";
+    document.getElementById("adminmsg-send").disabled = true;
+    document.getElementById("adminmsgmodal").classList.add("show");
+    loadAdminMsgHistory();
+  }
+  document.getElementById("adminmsg-close").addEventListener("click", () => document.getElementById("adminmsgmodal").classList.remove("show"));
+  document.getElementById("adminmsgmodal").addEventListener("click", (e) => { if(e.target.id === "adminmsgmodal") document.getElementById("adminmsgmodal").classList.remove("show"); });
+  document.getElementById("adminmsg-input").addEventListener("input", (e) => {
+    document.getElementById("adminmsg-send").disabled = e.target.value.trim().length === 0;
+  });
+  async function sendAdminMsg(){
+    const input = document.getElementById("adminmsg-input");
+    const text = input.value.trim();
+    if(!text || !adminMsgTargetId) return;
+    const sendBtn = document.getElementById("adminmsg-send");
+    sendBtn.disabled = true;
+    try{
+      await adminFetch("/api/admin/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: adminMsgTargetId, body: text }),
+      });
+      input.value = "";
+      showToast("쪽지를 보냈습니다");
+      loadAdminMsgHistory();
+    }catch(err){
+      showToast(err.message || "쪽지를 보내지 못했습니다");
+      sendBtn.disabled = false;
+    }
+  }
+  document.getElementById("adminmsg-send").addEventListener("click", sendAdminMsg);
+  document.getElementById("adminmsg-input").addEventListener("keydown", (e) => {
+    if(e.key === "Enter" && !document.getElementById("adminmsg-send").disabled) sendAdminMsg();
   });
 
   // ===================== 문의내역 관리 (관리자 전용) =====================
@@ -3823,7 +3894,7 @@
       const replies = myRepliesByTicket[t.id] || [];
       const replyHtml = replies.map((r) => `
         <div style="margin-top:8px;padding:10px 12px;background:var(--bg-2);border-radius:10px;border:1px solid var(--line-soft)">
-          <div style="font-size:11.5px;font-weight:700;color:var(--accent);margin-bottom:4px">운영자 답변 · ${formatDateTime(r.created_at)}</div>
+          <div style="font-size:11.5px;font-weight:700;color: var(--text);margin-bottom:4px">운영자 답변 · ${formatDateTime(r.created_at)}</div>
           <div style="font-size:13px;line-height:1.5;white-space:pre-wrap">${escapeHtml(r.body)}</div>
         </div>`).join("");
       return `
@@ -3882,6 +3953,80 @@
       dots.forEach((d) => d && d.classList.toggle("show", has));
     }catch(e){ /* ignore */ }
   }
+
+  // ---------- 쪽지함 (회원 전용: 운영자가 보낸 쪽지를 확인) ----------
+  let myMessagesCache = [];
+  function renderMyMessagesList(){
+    const el = document.getElementById("mymsg-body");
+    if(!myMessagesCache.length){
+      el.innerHTML = '<div class="discuss-empty">아직 받은 쪽지가 없습니다.</div>';
+      return;
+    }
+    el.innerHTML = myMessagesCache.map((m) => `
+      <div style="padding:12px 0;border-bottom:1px solid var(--line-soft)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span class="chip pending" style="background:var(--panel-2);color:var(--text-dim)">운영자</span>
+          <span style="font-size:11.5px;color:var(--text-faint)">${formatDateTime(m.created_at)}</span>
+        </div>
+        <div style="font-size:13.5px;line-height:1.5;margin-top:8px;white-space:pre-wrap">${escapeHtml(m.body || "")}</div>
+      </div>`).join("");
+  }
+  async function loadMyMessages(){
+    const el = document.getElementById("mymsg-body");
+    el.innerHTML = '<div class="discuss-empty">불러오는 중...</div>';
+    if(!window.psSupabase || !window.psCurrentUser){
+      el.innerHTML = '<div class="discuss-empty">불러오지 못했습니다.</div>';
+      return;
+    }
+    try{
+      const { data, error } = await window.psSupabase
+        .from("member_messages")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if(error) throw error;
+      myMessagesCache = data || [];
+      renderMyMessagesList();
+      const unreadIds = myMessagesCache.filter((m) => !m.is_read).map((m) => m.id);
+      if(unreadIds.length){
+        await window.psSupabase.from("member_messages").update({ is_read: true }).in("id", unreadIds);
+        refreshMsgUnreadBadge();
+      }
+    }catch(err){
+      el.innerHTML = `<div class="discuss-empty">${escapeHtml((err && err.message) || "불러오지 못했습니다")}</div>`;
+    }
+  }
+  async function refreshMsgUnreadBadge(){
+    const dots = [document.getElementById("mymsg-unread-dot"), document.getElementById("mymsg-unread-dot-more")];
+    if(!window.psSupabase || !window.psCurrentUser){
+      dots.forEach((d) => d && d.classList.remove("show"));
+      return;
+    }
+    try{
+      const { count } = await window.psSupabase
+        .from("member_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("is_read", false);
+      const has = !!(count && count > 0);
+      dots.forEach((d) => d && d.classList.toggle("show", has));
+    }catch(e){ /* ignore */ }
+  }
+  function openMyMsgModal(){
+    if(!window.psCurrentUser){
+      showToast("로그인 후 쪽지함을 확인할 수 있어요");
+      openMemberLoginModal();
+      return;
+    }
+    document.getElementById("mymsgmodal").classList.add("show");
+    loadMyMessages();
+  }
+  document.getElementById("mymsgbtn").addEventListener("click", openMyMsgModal);
+  document.getElementById("more-mymsgbtn").addEventListener("click", () => {
+    document.getElementById("moresheet").classList.remove("show");
+    openMyMsgModal();
+  });
+  document.getElementById("mymsg-close").addEventListener("click", () => document.getElementById("mymsgmodal").classList.remove("show"));
+  document.getElementById("mymsgmodal").addEventListener("click", (e) => { if(e.target.id === "mymsgmodal") document.getElementById("mymsgmodal").classList.remove("show"); });
+
   function openSupportModal(){
     if(!window.psCurrentUser){
       showToast("로그인 후 문의를 남기실 수 있어요");

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PULSE SCORE 관리자 로그인</title>
+<!--
+  이 페이지는 일반 회원용 화면(index.html)과 완전히 분리된 관리자 전용 로그인
+  페이지입니다. 회원용 화면에는 이 페이지로 가는 링크나 버튼이 전혀 없으며,
+  관리자는 이 주소(/admin.html)를 직접 알고 있어야만 접근할 수 있습니다.
+
+  비밀번호 확인은 기존과 동일하게 서버의 /api/admin/verify API(ADMIN_SECRET
+  환경변수)로 처리하고, 확인이 끝나면 index.html이 관리자 모드를 인식하는 데
+  쓰는 것과 똑같은 localStorage/sessionStorage 값을 저장한 뒤 메인 화면(/)으로
+  이동합니다. 즉, 로그인 이후의 관리자 기능(회원 관리, 배너 관리 등)은 전부
+  기존 index.html 안에서 그대로 동작합니다 — 이 페이지는 "입구"만 분리한 것입니다.
+-->
+<style>
+  :root{
+    --bg: #FFFFFF;
+    --panel: #FFFFFF;
+    --line: #ECECEC;
+    --text: #111111;
+    --text-dim: #4B5563;
+    --text-faint: #9CA3AF;
+    --accent: #FFD400;
+    --bad: #FF6B5E;
+    --bad-dim: rgba(255,107,94,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .card{
+    width:100%;
+    max-width:360px;
+    border:1.5px solid var(--line);
+    border-radius:20px;
+    padding:32px 28px;
+    box-shadow:0 12px 32px rgba(0,0,0,0.06);
+  }
+  .brand{
+    font-size:20px;
+    font-weight:900;
+    letter-spacing:-0.02em;
+    margin-bottom:4px;
+  }
+  .brand .score{ color:#EAB600; }
+  .subtitle{
+    font-size:13px;
+    color: var(--text-dim);
+    margin-bottom:24px;
+  }
+  label{
+    display:block;
+    font-size:12.5px;
+    font-weight:700;
+    color: var(--text-dim);
+    margin-bottom:6px;
+  }
+  input[type="password"]{
+    width:100%;
+    padding:12px 14px;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    font-size:14px;
+    font-family:inherit;
+    color: var(--text);
+    background:#FAFAFA;
+    margin-bottom:14px;
+  }
+  input[type="password"]:focus{
+    outline:none;
+    border-color: var(--accent);
+  }
+  button{
+    width:100%;
+    padding:13px 16px;
+    border:none;
+    border-radius:999px;
+    background: var(--accent);
+    color: var(--text);
+    font-size:14.5px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  button:disabled{
+    opacity:0.6;
+    cursor:default;
+  }
+  .errormsg{
+    display:none;
+    background: var(--bad-dim);
+    color: var(--bad);
+    font-size:12.5px;
+    font-weight:700;
+    padding:10px 12px;
+    border-radius:10px;
+    margin-bottom:14px;
+  }
+  .errormsg.show{ display:block; }
+  .backlink{
+    display:block;
+    text-align:center;
+    margin-top:18px;
+    font-size:12.5px;
+    color: var(--text-faint);
+    text-decoration:none;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">PULSE <span class="score">SCORE</span></div>
+    <div class="subtitle">관리자 전용 페이지입니다</div>
+    <div class="errormsg" id="admin-error"></div>
+    <label for="admin-pw-input">관리자 비밀번호</label>
+    <input type="password" id="admin-pw-input" placeholder="비밀번호 입력" autocomplete="current-password">
+    <button id="admin-submit">관리자 로그인</button>
+    <a class="backlink" href="/">← 일반 사이트로 돌아가기</a>
+  </div>
+
+  <script>
+    const pwInput = document.getElementById("admin-pw-input");
+    const submitBtn = document.getElementById("admin-submit");
+    const errorEl = document.getElementById("admin-error");
+
+    function showError(msg){
+      errorEl.textContent = msg;
+      errorEl.classList.add("show");
+    }
+    function clearError(){
+      errorEl.classList.remove("show");
+    }
+
+    async function submitAdminLogin(){
+      const secret = pwInput.value.trim();
+      if(!secret) return;
+      clearError();
+      submitBtn.disabled = true;
+      const prevLabel = submitBtn.textContent;
+      submitBtn.textContent = "확인 중...";
+      try{
+        const res = await fetch("/api/admin/verify", { headers: { "x-admin-secret": secret } });
+        if(!res.ok){
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || "관리자 비밀번호가 올바르지 않습니다");
+        }
+        // index.html이 관리자 모드를 인식하는 데 쓰는 것과 동일한 키에 저장합니다.
+        try{ localStorage.setItem("pulsescore_admin", "1"); }catch(e){}
+        try{ sessionStorage.setItem("pulsescore_admin_secret", secret); }catch(e){}
+        submitBtn.textContent = "이동 중...";
+        window.location.href = "/";
+      } catch(err){
+        showError(err.message || "관리자 로그인에 실패했습니다");
+        submitBtn.disabled = false;
+        submitBtn.textContent = prevLabel;
+      }
+    }
+
+    submitBtn.addEventListener("click", submitAdminLogin);
+    pwInput.addEventListener("keydown", (e) => {
+      if(e.key === "Enter") submitAdminLogin();
+    });
+    pwInput.addEventListener("input", clearError);
+    pwInput.focus();
+  </script>
+</body>
+</html>
