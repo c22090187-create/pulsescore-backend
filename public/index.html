@@ -3631,9 +3631,10 @@
         <td style="white-space:nowrap;font-size:12px;color:var(--text-dim)">${formatDateTime(t.created_at)}</td>
         <td style="white-space:nowrap;font-size:12.5px">${t.status === "처리완료" ? '<span class="chip ok">처리완료</span>' : '<span class="chip pending">접수</span>'}</td>
         <td style="text-align:right;white-space:nowrap">
+          ${t.user_id ? `
           <button class="admin-edit-btn support-reply-btn" data-id="${escapeHtml(t.id)}" data-type="${escapeHtml(t.type || "")}" data-nickname="${escapeHtml(t.nickname || "")}" data-body="${escapeHtml(t.body || "")}" aria-label="답변하기" title="답변하기">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 12l16-8-6 16-2-7-8-1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-          </button>
+          </button>` : `<span style="font-size:11px;color:var(--text-faint)" title="회원 계정과 연결되어 있지 않아 답변을 보낼 수 없는 문의입니다(예전 방식으로 등록됨)">답변불가</span>`}
           ${t.status === "처리완료" ? "" : `
           <button class="admin-edit-btn support-resolve-btn" data-id="${escapeHtml(t.id)}" aria-label="처리완료로 표시" title="처리완료로 표시">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
