@@ -1280,6 +1280,10 @@
     <div class="writemodal-body">
       <div style="font-size:15px;font-weight:700" id="account-name-label">-</div>
       <div class="write-charcount" style="text-align:left;font-size:12.5px" id="account-email-label">-</div>
+      <button type="button" id="account-tier-row" style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;padding:12px 14px;background:var(--bg-2);border:none;border-radius:12px;cursor:pointer;width:100%;text-align:left">
+        <span style="font-weight:800;font-size:14px" id="account-tier-label">-</span>
+        <span style="color:var(--text-dim);font-size:13px" id="account-points-label">-</span>
+      </button>
     </div>
     <div class="writemodal-foot" style="justify-content:center">
       <button type="button" id="account-logout" style="width:100%;background:none;border:1px solid var(--line);color:var(--text-dim);font-weight:700;font-size:14px;padding:11px 16px;border-radius:999px">로그아웃</button>
@@ -3403,7 +3407,34 @@
     document.getElementById("account-name-label").textContent = memberDisplayName(window.psCurrentUser);
     document.getElementById("account-email-label").textContent = window.psCurrentUser.email || "";
     document.getElementById("accountmodal").classList.add("show");
+    loadAccountTier();
   }
+  // 내 계정 화면에 등급(브론즈/실버/골드/VIP)과 누적 포인트를 보여줍니다.
+  // (등급 기준은 pointsToTier() 함수 하나로 통일해서 관리합니다.)
+  async function loadAccountTier(){
+    const tierLabel = document.getElementById("account-tier-label");
+    const pointsLabel = document.getElementById("account-points-label");
+    tierLabel.textContent = "-";
+    pointsLabel.textContent = "불러오는 중...";
+    try{
+      if(!window.psSupabase || !window.psCurrentUser) throw new Error("no supabase");
+      const { data: pointsRow } = await window.psSupabase
+        .from("member_points").select("points")
+        .eq("user_id", window.psCurrentUser.id).maybeSingle();
+      const points = (pointsRow && pointsRow.points) || 0;
+      const tier = pointsToTier(points);
+      tierLabel.textContent = tier.name + " 등급";
+      tierLabel.style.color = tier.color;
+      pointsLabel.textContent = points + "P 보유";
+    }catch(err){
+      tierLabel.textContent = "브론즈 등급";
+      pointsLabel.textContent = "0P 보유";
+    }
+  }
+  document.getElementById("account-tier-row").addEventListener("click", () => {
+    document.getElementById("accountmodal").classList.remove("show");
+    openPointsModal();
+  });
   document.getElementById("account-close").addEventListener("click", () => document.getElementById("accountmodal").classList.remove("show"));
   document.getElementById("accountmodal").addEventListener("click", (e) => { if(e.target.id === "accountmodal") document.getElementById("accountmodal").classList.remove("show"); });
   document.getElementById("account-logout").addEventListener("click", async () => {
