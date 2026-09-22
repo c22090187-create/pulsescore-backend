@@ -1065,11 +1065,13 @@
       <button data-nav="paidad"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/></svg><span>유료 광고방</span></button>
       <button data-nav="notice"><svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="9" r="4" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="14" r="4" stroke="currentColor" stroke-width="1.8"/></svg><span>공지</span></button>
       <button class="adminonly-btn" id="more-membersbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>회원 관리</span></button>
+      <button class="adminonly-btn" id="more-statsbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V9m7 10V4m7 15v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>통계 대시보드</span></button>
       <button class="adminonly-btn" id="more-supportlistbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18h.01M9.5 9a2.5 2.5 0 015 0c0 1.5-1.5 2-2 2.7-.3.4-.5.9-.5 1.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg><span>문의내역 관리</span></button>
       <button class="adminonly-btn" id="more-adminlogoutbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>관리자 로그아웃</span></button>
       <div style="height:1px;background:var(--line-soft);margin:6px 4px"></div>
       <button id="more-supportbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18h.01M9.5 9a2.5 2.5 0 015 0c0 1.5-1.5 2-2 2.7-.3.4-.5.9-.5 1.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg><span>고객센터 문의</span><span class="unread-dot" id="support-unread-dot-more"></span></button>
       <button id="more-mymsgbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v13H7l-3 3V4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>쪽지함</span><span class="unread-dot" id="mymsg-unread-dot-more"></span></button>
+      <button id="more-pointsbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 7.2H22l-6 4.4 2.3 7.1L12 16.3l-6.3 4.4 2.3-7.1-6-4.4h7.6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span>출석체크 · 포인트</span></button>
     </div>
   </div>
 </div>
@@ -1148,6 +1150,41 @@
       </button>
     </div>
     <div class="discuss-list" id="mymsg-body" style="padding:14px 16px">
+      <div class="discuss-empty">불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="statsmodal">
+  <div class="discussmodal" style="max-width:640px">
+    <div class="discuss-head">
+      <div class="discuss-headinfo">
+        <span class="dh-teams">통계 대시보드</span>
+        <span class="dh-meta" id="stats-updated-label">불러오는 중...</span>
+      </div>
+      <button class="ghostbtn" id="stats-refresh" style="padding:6px 12px;font-size:12px">새로고침</button>
+      <button class="modal-close" id="stats-close" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="stats-body" style="padding:16px">
+      <div class="discuss-empty">불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="pointsmodal">
+  <div class="discussmodal" style="max-width:480px">
+    <div class="discuss-head">
+      <div class="discuss-headinfo">
+        <span class="dh-teams">출석체크 · 포인트</span>
+        <span class="dh-meta">출석하고 예측에 참여하면 포인트가 쌓여요</span>
+      </div>
+      <button class="modal-close" id="points-close" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="points-body" style="padding:16px">
       <div class="discuss-empty">불러오는 중...</div>
     </div>
   </div>
@@ -1336,10 +1373,31 @@
       }
       window.psSupabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
       console.info("[PulseScore] Supabase 연결 완료");
+      recordVisitIfNeeded();
     } catch (err) {
       console.warn("[PulseScore] Supabase 초기화 실패:", err);
     }
   })();
+
+  // ===================== 방문자 통계 (관리자 대시보드용) =====================
+  // 이 브라우저에서 오늘 처음 방문했을 때만 site_visits 테이블에 기록 1건을
+  // 남깁니다. (새로고침을 여러 번 해도 하루에 1번만 기록됩니다.)
+  function todayKST(){
+    return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+  }
+  async function recordVisitIfNeeded(){
+    try{
+      const today = todayKST();
+      const last = localStorage.getItem("pulsescore_last_visit_date");
+      if(last === today) return;
+      if(!window.psSupabase) return;
+      const { error } = await window.psSupabase.from("site_visits").insert({});
+      if(error) throw error;
+      localStorage.setItem("pulsescore_last_visit_date", today);
+    }catch(err){
+      console.warn("[PulseScore] 방문 기록 실패:", err);
+    }
+  }
 
   const CRESTS = {
     "FC 서울": {bg:"#B6332C", label:"S"}, "울산 HD": {bg:"#1B4FA0", label:"U"},
@@ -1651,6 +1709,7 @@
     document.getElementById("bannertoggle").classList.toggle("show-admin", isAdmin);
     document.getElementById("paidad-writebtn").classList.toggle("show-admin", isAdmin);
     document.getElementById("more-membersbtn").classList.toggle("show-admin", isAdmin);
+    document.getElementById("more-statsbtn").classList.toggle("show-admin", isAdmin);
     document.getElementById("more-supportlistbtn").classList.toggle("show-admin", isAdmin);
     document.getElementById("admintoolsbtn").classList.toggle("show-admin", isAdmin);
     document.getElementById("more-adminlogoutbtn").classList.toggle("show-admin", isAdmin);
@@ -3521,13 +3580,24 @@
     return body;
   }
 
+  // 포인트 구간별 등급 계산 (회원 관리 목록 / 포인트 모달에서 공용으로 사용)
+  function pointsToTier(points){
+    const p = Number(points) || 0;
+    if(p >= 400) return { name:"VIP", color:"#7C3AED" };
+    if(p >= 150) return { name:"골드", color:"#B8860B" };
+    if(p >= 50) return { name:"실버", color:"#6B7280" };
+    return { name:"브론즈", color:"#B08D57" };
+  }
+
   function renderMembersTable(members){
     const body = document.getElementById("members-body");
     if(!members.length){
       body.innerHTML = '<div class="discuss-empty">가입한 회원이 아직 없습니다.</div>';
       return;
     }
-    const rows = members.map((m) => `
+    const rows = members.map((m) => {
+      const tier = pointsToTier(m.points);
+      return `
       <tr data-id="${escapeHtml(m.id)}">
         <td>
           <div style="font-weight:700">${escapeHtml(m.email || "-")}</div>
@@ -3535,6 +3605,10 @@
         </td>
         <td style="white-space:nowrap;font-size:12.5px;color:var(--text-dim)">${escapeHtml(m.phone || "-")}</td>
         <td style="white-space:nowrap;font-size:12.5px;color:var(--text-dim)">${formatDateTime(m.createdAt)}</td>
+        <td style="white-space:nowrap;font-size:12.5px">
+          <span style="font-weight:800;color:${tier.color}">${tier.name}</span>
+          <span style="color:var(--text-faint)">${Number(m.points) || 0}P</span>
+        </td>
         <td style="white-space:nowrap;font-size:12.5px">${m.emailConfirmed ? '<span class="chip ok">인증됨</span>' : '<span class="chip pending">미인증</span>'}</td>
         <td style="text-align:right;white-space:nowrap">
           <button class="admin-edit-btn member-msg-btn" data-id="${escapeHtml(m.id)}" data-email="${escapeHtml(m.email || "")}" aria-label="쪽지 보내기" title="쪽지 보내기">
@@ -3547,11 +3621,12 @@
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </td>
-      </tr>`).join("");
+      </tr>`;
+    }).join("");
     body.innerHTML = `
       <div class="htable">
         <table>
-          <thead><tr><th>회원</th><th>전화번호</th><th>가입일</th><th>이메일 인증</th><th></th></tr></thead>
+          <thead><tr><th>회원</th><th>전화번호</th><th>가입일</th><th>등급/포인트</th><th>이메일 인증</th><th></th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>`;
@@ -3594,6 +3669,51 @@
   document.getElementById("membersmodal").addEventListener("click", (e) => { if(e.target.id === "membersmodal") document.getElementById("membersmodal").classList.remove("show"); });
   document.getElementById("members-refresh").addEventListener("click", loadMembers);
   document.getElementById("members-search").addEventListener("input", applyMembersFilter);
+
+  // ===================== 통계 대시보드 (관리자 전용) =====================
+  function statCardHtml(label, value, sub){
+    return `
+      <div style="border:1.5px solid var(--line);border-radius:14px;padding:16px;background:var(--panel)">
+        <div style="font-size:12.5px;font-weight:700;color:var(--text-dim);margin-bottom:8px">${escapeHtml(label)}</div>
+        <div style="font-size:24px;font-weight:900;letter-spacing:-0.02em">${escapeHtml(String(value))}</div>
+        ${sub ? `<div style="font-size:11.5px;color:var(--text-faint);margin-top:4px">${escapeHtml(sub)}</div>` : ""}
+      </div>`;
+  }
+
+  function renderStats(data){
+    const body = document.getElementById("stats-body");
+    body.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+        ${statCardHtml("전체 회원 수", `${data.members.total}명`, `오늘 신규 ${data.members.newToday}명 · 최근 7일 ${data.members.newThisWeek}명`)}
+        ${statCardHtml("오늘 방문자", `${data.visits.today}명`, `최근 7일 ${data.visits.thisWeek}명 · 누적 ${data.visits.total}명`)}
+        ${statCardHtml("미처리 문의", `${data.support.open}건`, `전체 문의 ${data.support.total}건`)}
+        ${statCardHtml("오늘 보낸 쪽지", `${data.messages.today}건`, `누적 발송 ${data.messages.total}건`)}
+      </div>`;
+  }
+
+  async function loadStats(){
+    const body = document.getElementById("stats-body");
+    const label = document.getElementById("stats-updated-label");
+    body.innerHTML = '<div class="discuss-empty">불러오는 중...</div>';
+    label.textContent = "불러오는 중...";
+    try{
+      const data = await adminFetch("/api/admin/stats");
+      renderStats(data);
+      label.textContent = `${formatDateTime(new Date().toISOString())} 기준`;
+    }catch(err){
+      label.textContent = "오류";
+      body.innerHTML = `<div class="discuss-empty">${escapeHtml(err.message || "불러오지 못했습니다")}</div>`;
+    }
+  }
+
+  function openStatsModal(){
+    document.getElementById("statsmodal").classList.add("show");
+    loadStats();
+  }
+  document.getElementById("more-statsbtn").addEventListener("click", openStatsModal);
+  document.getElementById("stats-close").addEventListener("click", () => document.getElementById("statsmodal").classList.remove("show"));
+  document.getElementById("statsmodal").addEventListener("click", (e) => { if(e.target.id === "statsmodal") document.getElementById("statsmodal").classList.remove("show"); });
+  document.getElementById("stats-refresh").addEventListener("click", loadStats);
   document.getElementById("members-body").addEventListener("click", async (e) => {
     const msgBtn = e.target.closest(".member-msg-btn");
     if(msgBtn){
@@ -4038,6 +4158,76 @@
   });
   document.getElementById("mymsg-close").addEventListener("click", () => document.getElementById("mymsgmodal").classList.remove("show"));
   document.getElementById("mymsgmodal").addEventListener("click", (e) => { if(e.target.id === "mymsgmodal") document.getElementById("mymsgmodal").classList.remove("show"); });
+
+  // ===================== 출석체크 · 포인트 (회원 전용) =====================
+  async function loadMyPoints(){
+    const body = document.getElementById("points-body");
+    body.innerHTML = '<div class="discuss-empty">불러오는 중...</div>';
+    try{
+      if(!window.psSupabase || !window.psCurrentUser) throw new Error("Supabase 연동이 준비되지 않았습니다");
+      const today = todayKST();
+      const [{ data: pointsRow }, { data: checkinRow }] = await Promise.all([
+        window.psSupabase.from("member_points").select("points").eq("user_id", window.psCurrentUser.id).maybeSingle(),
+        window.psSupabase.from("attendance_checkins").select("id").eq("user_id", window.psCurrentUser.id).eq("checkin_date", today).maybeSingle(),
+      ]);
+      const points = (pointsRow && pointsRow.points) || 0;
+      const checkedInToday = !!checkinRow;
+      renderPoints(points, checkedInToday);
+    }catch(err){
+      body.innerHTML = `<div class="discuss-empty">${escapeHtml(err.message || "불러오지 못했습니다")}</div>`;
+    }
+  }
+
+  function renderPoints(points, checkedInToday){
+    const body = document.getElementById("points-body");
+    const tier = pointsToTier(points);
+    body.innerHTML = `
+      <div style="text-align:center;padding:20px 0 24px">
+        <div style="font-size:13px;color:var(--text-dim);font-weight:700;margin-bottom:6px">나의 등급</div>
+        <div style="font-size:22px;font-weight:900;color:${tier.color};margin-bottom:4px">${escapeHtml(tier.name)}</div>
+        <div style="font-size:15px;color:var(--text-dim)">${points}P 보유</div>
+      </div>
+      <button id="points-checkin-btn" ${checkedInToday ? "disabled" : ""} style="width:100%;padding:13px 16px;border:none;border-radius:999px;background:${checkedInToday ? "#ECECEC" : "var(--accent)"};color:${checkedInToday ? "var(--text-faint)" : "#111"};font-size:14.5px;font-weight:800;cursor:${checkedInToday ? "default" : "pointer"}">
+        ${checkedInToday ? "오늘 출석 완료" : "출석체크하고 +5P 받기"}
+      </button>
+      <div style="margin-top:14px;font-size:12px;color:var(--text-faint);text-align:center">
+        경기 예측에 참여하면 경기당 +3P가 자동으로 쌓여요
+      </div>`;
+    const btn = document.getElementById("points-checkin-btn");
+    if(btn && !checkedInToday){
+      btn.addEventListener("click", checkInToday);
+    }
+  }
+
+  async function checkInToday(){
+    const btn = document.getElementById("points-checkin-btn");
+    if(btn) btn.disabled = true;
+    try{
+      if(!window.psSupabase || !window.psCurrentUser) throw new Error("Supabase 연동이 준비되지 않았습니다");
+      const today = todayKST();
+      const { error } = await window.psSupabase.from("attendance_checkins")
+        .insert({ user_id: window.psCurrentUser.id, checkin_date: today });
+      if(error) throw error;
+      showToast("출석체크 완료! +5P 적립되었습니다");
+      loadMyPoints();
+    }catch(err){
+      showToast(err.message || "출석체크에 실패했습니다");
+      if(btn) btn.disabled = false;
+    }
+  }
+
+  function openPointsModal(){
+    if(!window.psCurrentUser){
+      showToast("로그인 후 출석체크와 포인트를 확인할 수 있어요");
+      openMemberLoginModal();
+      return;
+    }
+    document.getElementById("pointsmodal").classList.add("show");
+    loadMyPoints();
+  }
+  document.getElementById("more-pointsbtn").addEventListener("click", openPointsModal);
+  document.getElementById("points-close").addEventListener("click", () => document.getElementById("pointsmodal").classList.remove("show"));
+  document.getElementById("pointsmodal").addEventListener("click", (e) => { if(e.target.id === "pointsmodal") document.getElementById("pointsmodal").classList.remove("show"); });
 
   function openSupportModal(){
     if(!window.psCurrentUser){
