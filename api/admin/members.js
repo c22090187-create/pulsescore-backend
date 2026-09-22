@@ -36,6 +36,20 @@ module.exports = async function handler(req, res) {
       const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
       if (error) throw error;
 
+      // 회원 등급/포인트 시스템: member_points 테이블에서 회원별 누적 포인트를
+      // 함께 가져와서 목록에 합쳐줍니다. (테이블이 아직 없으면 조용히 0점 처리)
+      let pointsMap = new Map();
+      try {
+        const { data: pointsRows, error: pointsErr } = await supabaseAdmin
+          .from("member_points")
+          .select("user_id, points");
+        if (!pointsErr) {
+          pointsMap = new Map((pointsRows || []).map((r) => [r.user_id, r.points]));
+        }
+      } catch (e) {
+        // member_points 테이블이 아직 생성되지 않은 경우 등 -> 0점으로 표시
+      }
+
       const members = (data.users || []).map((u) => ({
         id: u.id,
         email: u.email,
@@ -44,6 +58,7 @@ module.exports = async function handler(req, res) {
         createdAt: u.created_at,
         lastSignInAt: u.last_sign_in_at,
         emailConfirmed: !!u.email_confirmed_at,
+        points: pointsMap.get(u.id) || 0,
       }));
       members.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
