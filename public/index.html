@@ -822,6 +822,7 @@
   <div class="topbar-right">
     <button class="iconbtn" id="notifbtn" aria-label="알림"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 01-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="dot"></span></button>
     <button class="iconbtn adminonly-btn" id="admintoolsbtn" aria-label="관리자 메뉴" title="관리자 메뉴"><svg viewBox="0 0 24 24" fill="none"><path d="M10.3 3.5c.3-1.3 2.1-1.3 2.4 0l.2.9a1.6 1.6 0 002.3 1l.8-.5c1.1-.7 2.4.6 1.7 1.7l-.5.8a1.6 1.6 0 001 2.3l.9.2c1.3.3 1.3 2.1 0 2.4l-.9.2a1.6 1.6 0 00-1 2.3l.5.8c.7 1.1-.6 2.4-1.7 1.7l-.8-.5a1.6 1.6 0 00-2.3 1l-.2.9c-.3 1.3-2.1 1.3-2.4 0l-.2-.9a1.6 1.6 0 00-2.3-1l-.8.5c-1.1.7-2.4-.6-1.7-1.7l.5-.8a1.6 1.6 0 00-1-2.3l-.9-.2c-1.3-.3-1.3-2.1 0-2.4l.9-.2a1.6 1.6 0 001-2.3l-.5-.8c-.7-1.1.6-2.4 1.7-1.7l.8.5a1.6 1.6 0 002.3-1l.2-.9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/></svg></button>
+    <button class="ghostbtn hide-tablet" id="pointsbtn-top">출석체크·포인트</button>
     <button class="ghostbtn hide-tablet" id="mymsgbtn">쪽지함<span class="unread-dot" id="mymsg-unread-dot"></span></button>
     <button class="ghostbtn hide-tablet" id="supportbtn">고객센터 문의<span class="unread-dot" id="support-unread-dot"></span></button>
     <button class="primarybtn-sm" id="loginbtn">회원 로그인</button>
@@ -4257,6 +4258,10 @@
     loadMyPoints();
   }
   document.getElementById("more-pointsbtn").addEventListener("click", openPointsModal);
+  // 화면이 넓은 PC에서는 "더보기" 버튼 자체가 안 보이는 경우가 있어서(모든 메뉴가
+  // 상단에 바로 펼쳐지므로), 쪽지함/고객센터 문의처럼 출석체크·포인트도 상단에
+  // 항상 보이는 버튼을 따로 하나 둡니다.
+  document.getElementById("pointsbtn-top").addEventListener("click", openPointsModal);
   document.getElementById("points-close").addEventListener("click", () => document.getElementById("pointsmodal").classList.remove("show"));
   document.getElementById("pointsmodal").addEventListener("click", (e) => { if(e.target.id === "pointsmodal") document.getElementById("pointsmodal").classList.remove("show"); });
 
