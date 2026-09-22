@@ -14,6 +14,7 @@
 // 그 결과를 모두에게 재사용시켜주는 구조입니다.
 
 const { callApiSports } = require("./_apisports");
+const { fetchThesportsdb, normalizeThesportsdb } = require("./_thesportsdb");
 const { getCache, setCache } = require("./_cache");
 const { toKorean, KO_NAMES } = require("./_dictionary");
 const { translateBatch } = require("./_translate");
@@ -107,10 +108,12 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  try {
-    let raw;
-    let matches;
+  let raw;
+  let matches;
+  let usedFallback = false;
+  let apiSportsErr = null;
 
+  try {
     if (sport === "soccer") {
       raw = await callApiSports("soccer", "fixtures", { date });
       matches = normalizeSoccer(raw);
@@ -119,12 +122,37 @@ module.exports = async function handler(req, res) {
       raw = await callApiSports(sport, "games", { date });
       matches = normalizeGeneric(raw);
     }
+  } catch (err) {
+    // API-Sports 호출이 실패하면(계정 정지 등), 화면 테스트가 계속 가능하도록
+    // 무료 대체 데이터(TheSportsDB)로 자동 전환합니다. API-Sports가 복구되면
+    // 다음 호출부터는 이 catch에 들어오지 않고 다시 실제 데이터를 씁니다.
+    apiSportsErr = err;
+    try {
+      raw = await fetchThesportsdb(sport, date);
+      matches = normalizeThesportsdb(raw);
+      usedFallback = true;
+    } catch (fallbackErr) {
+      console.error("[scores] API-Sports 실패:", apiSportsErr);
+      console.error("[scores] 대체 데이터(TheSportsDB)도 실패:", fallbackErr);
+      res.status(502).json({
+        error: "스포츠 데이터를 가져오는 중 문제가 발생했습니다.",
+        detail: String(apiSportsErr.message || apiSportsErr),
+      });
+      return;
+    }
+  }
 
+  try {
     matches = await attachKoreanNames(matches);
-
     setCache(cacheKey, matches, CACHE_TTL_SECONDS);
-    const payload = { source: "live", matches };
-    if (matches.length === 0) {
+    const payload = { source: usedFallback ? "test-thesportsdb" : "live", matches };
+    if (usedFallback) {
+      // 관리자가 지금 보이는 게 실제 데이터가 아니라 임시 테스트 데이터라는 걸
+      // 알 수 있도록 원래 API-Sports 에러도 같이 내려줍니다.
+      payload.note = "API-Sports 연결 실패로 임시 테스트 데이터(TheSportsDB)를 보여주고 있습니다.";
+      payload.apiSportsError = String(apiSportsErr.message || apiSportsErr);
+    }
+    if (matches.length === 0 && !usedFallback) {
       // 임시 진단용: 왜 0건인지 원인을 바로 확인하기 위해 API-Sports의 원본 응답 일부를 함께 내려줍니다.
       payload.debug = {
         results: raw.results,
