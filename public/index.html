@@ -1721,6 +1721,8 @@
     if(!isAdmin){
       document.getElementById("banneradmin").classList.remove("show");
     }
+    // 상단 "회원 로그인" 버튼에 관리자 모드 여부를 함께 표시합니다.
+    applyMemberUI();
     Object.keys(BOARDS).forEach(bId => renderBoard(bId));
     if(document.getElementById("discussmodal").classList.contains("show") && currentThreadKey){
       renderCommentsUI(true);
@@ -3398,7 +3400,9 @@
   function applyMemberUI(){
     const btn = document.getElementById("loginbtn");
     if(window.psCurrentUser){
-      btn.textContent = memberDisplayName(window.psCurrentUser);
+      btn.textContent = memberDisplayName(window.psCurrentUser) + (isAdmin ? " (관리자)" : "");
+    } else if(isAdmin){
+      btn.textContent = "관리자 모드";
     } else {
       btn.textContent = "회원 로그인";
     }
