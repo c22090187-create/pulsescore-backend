@@ -1373,31 +1373,31 @@
       }
       window.psSupabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
       console.info("[PulseScore] Supabase 연결 완료");
-      recordVisitIfNeeded();
     } catch (err) {
       console.warn("[PulseScore] Supabase 초기화 실패:", err);
     }
   })();
 
   // ===================== 방문자 통계 (관리자 대시보드용) =====================
-  // 이 브라우저에서 오늘 처음 방문했을 때만 site_visits 테이블에 기록 1건을
-  // 남깁니다. (새로고침을 여러 번 해도 하루에 1번만 기록됩니다.)
+  // 이 브라우저에서 오늘 처음 방문했을 때만 서버(/api/track-visit)에 방문 기록
+  // 1건을 남기도록 요청합니다. (새로고침을 여러 번 해도 하루에 1번만 기록됩니다.)
+  // 브라우저가 테이블에 직접 쓰지 않고, 관리자 API와 동일하게 서버의 service_role
+  // 키를 통해서만 기록되므로 Supabase 연동 준비와 상관없이 항상 동작합니다.
   function todayKST(){
     return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
   }
-  async function recordVisitIfNeeded(){
+  (async function recordVisitIfNeeded(){
     try{
       const today = todayKST();
       const last = localStorage.getItem("pulsescore_last_visit_date");
       if(last === today) return;
-      if(!window.psSupabase) return;
-      const { error } = await window.psSupabase.from("site_visits").insert({});
-      if(error) throw error;
+      const res = await fetch("/api/track-visit", { method: "POST" });
+      if(!res.ok) throw new Error("방문 기록 요청 실패");
       localStorage.setItem("pulsescore_last_visit_date", today);
     }catch(err){
       console.warn("[PulseScore] 방문 기록 실패:", err);
     }
-  }
+  })();
 
   const CRESTS = {
     "FC 서울": {bg:"#B6332C", label:"S"}, "울산 HD": {bg:"#1B4FA0", label:"U"},
