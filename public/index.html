@@ -1571,24 +1571,30 @@
     return Array.from(byLeague.values());
   }
 
-  async function fetchRealScores(sport) {
-    const dateStr = new Date().toISOString().slice(0, 10);
-    const res = await fetch(`/api/scores?sport=${sport}&date=${dateStr}`);
+  async function fetchRealScores(sport, dateStr) {
+    const d = dateStr || new Date().toISOString().slice(0, 10);
+    const res = await fetch(`/api/scores?sport=${sport}&date=${d}`);
     if (!res.ok) throw new Error("bad status " + res.status);
     const data = await res.json();
     if (!Array.isArray(data.matches)) throw new Error("no matches field");
     return data.matches;
   }
 
-  async function loadRealDataAndRerender() {
-    const results = await Promise.allSettled(REAL_DATA_SPORTS.map((s) => fetchRealScores(s)));
+  // dateStr을 안 넘기면 오늘 날짜로 조회합니다.
+  // opts.clearOnFail을 true로 주면, 조회에 실패한 종목의 "예전 날짜" 데이터를
+  // 화면에 그대로 남겨두지 않고 비웁니다 (어제/내일 탭 전환 시 사용).
+  // 최초 페이지 로딩 때는 opts 없이 호출되어, 실패해도 예시 데이터가 그대로 유지됩니다.
+  async function loadRealDataAndRerender(dateStr, opts) {
+    const options = opts || {};
+    const d = dateStr || new Date().toISOString().slice(0, 10);
+    const results = await Promise.allSettled(REAL_DATA_SPORTS.map((s) => fetchRealScores(s, d)));
     let anySuccess = false;
 
     results.forEach((result, i) => {
       const sport = REAL_DATA_SPORTS[i];
       if (result.status === "fulfilled") {
         const groups = realMatchesToLeagueGroups(sport, result.value);
-        // 해당 종목의 기존 예시 리그를 제거하고 실제 데이터로 교체
+        // 해당 종목의 기존 데이터를 제거하고 실제 데이터로 교체
         for (let j = LEAGUES.length - 1; j >= 0; j--) {
           if (LEAGUES[j].sport === sport) LEAGUES.splice(j, 1);
         }
@@ -1602,19 +1608,37 @@
         MATCHES.push(...predictEntries);
 
         anySuccess = true;
+      } else if (options.clearOnFail) {
+        for (let j = LEAGUES.length - 1; j >= 0; j--) {
+          if (LEAGUES[j].sport === sport) LEAGUES.splice(j, 1);
+        }
+        for (let j = MATCHES.length - 1; j >= 0; j--) {
+          if (MATCHES[j].sport === sport) MATCHES.splice(j, 1);
+        }
       }
-      // 실패한 종목은 예시 데이터를 그대로 둡니다.
+      // 초기 로딩 실패 시(clearOnFail 없을 때)는 예시 데이터를 그대로 둡니다.
     });
 
     if (anySuccess) {
       usingRealData = true;
       const badge = document.getElementById("realdata-badge");
       if (badge) badge.style.display = "inline-flex";
+    }
+
+    if (anySuccess || options.clearOnFail) {
       renderScoresPage();
       renderMatchList();
       renderPredictPanel();
       if (typeof renderHistory === "function") renderHistory();
     }
+  }
+
+  // 어제/오늘/내일 탭이 가리키는 실제 날짜(YYYY-MM-DD)를 계산합니다.
+  function isoDateForDateTab(tab) {
+    const d = new Date();
+    if (tab === "yesterday") d.setDate(d.getDate() - 1);
+    if (tab === "tomorrow") d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
   }
 
   let currentLiveSport = "all";
@@ -2156,13 +2180,23 @@
     document.querySelectorAll("#sportchips-live button").forEach(b => b.classList.toggle("active", b === btn));
     renderScoresPage();
   });
+  let currentScoresDateTab = "today"; // "yesterday" | "today" | "tomorrow"
+  const DATE_TAB_LABELS = { yesterday: "어제", today: "오늘", tomorrow: "내일" };
+
   document.getElementById("datetabs").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-date]");
     if(!btn) return;
+    const tab = btn.getAttribute("data-date");
+    if(tab === currentScoresDateTab) return;
+
+    currentScoresDateTab = tab;
+    currentLeagueFilter = "all"; // 날짜가 바뀌면 이전 날짜 기준으로 골라둔 리그 필터는 초기화합니다.
     document.querySelectorAll("#datetabs button").forEach(b => b.classList.toggle("active", b === btn));
-    showToast(btn.getAttribute("data-date") === "today" ? "오늘 경기를 보고 있습니다" : "예시 데이터는 오늘 일정만 제공됩니다");
-    document.querySelectorAll("#datetabs button").forEach(b => { if(b.getAttribute("data-date")!=="today") b.classList.remove("active"); });
-    document.querySelector('#datetabs button[data-date="today"]').classList.add("active");
+    showToast(`${DATE_TAB_LABELS[tab]} 경기를 불러오는 중...`);
+
+    loadRealDataAndRerender(isoDateForDateTab(tab), { clearOnFail: true }).then(() => {
+      showToast(`${DATE_TAB_LABELS[tab]} 경기를 보고 있습니다`);
+    });
   });
 
   // ===================== PREDICT PAGE (기존 기능) =====================
