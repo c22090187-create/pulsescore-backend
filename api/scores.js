@@ -116,10 +116,23 @@ module.exports = async function handler(req, res) {
   try {
     if (sport === "soccer") {
       raw = await callApiSports("soccer", "fixtures", { date });
-      matches = normalizeSoccer(raw);
     } else {
       // 야구/농구/배구는 API-Sports에서 엔드포인트 이름이 "games" 입니다.
       raw = await callApiSports(sport, "games", { date });
+    }
+
+    // API-Sports는 계정 정지 등 문제가 있어도 HTTP 상태코드는 200(정상)으로
+    // 응답하고, 대신 응답 본문의 errors 필드에 문제를 담아 보낼 때가 있습니다.
+    // (예: 계정 정지 시 { errors: { access: "Your account is suspended..." } })
+    // 이 경우 callApiSports는 예외를 던지지 않으므로, 여기서 직접 확인해서
+    // 아래 catch로 넘겨 대체 데이터(TheSportsDB)로 전환되게 합니다.
+    if (raw && raw.errors && Object.keys(raw.errors).length > 0) {
+      throw new Error(Object.values(raw.errors).join(" / "));
+    }
+
+    if (sport === "soccer") {
+      matches = normalizeSoccer(raw);
+    } else {
       matches = normalizeGeneric(raw);
     }
   } catch (err) {
