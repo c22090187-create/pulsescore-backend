@@ -144,7 +144,10 @@
   /* ---------- hero banner ---------- */
   /* 이미지 속 문구(제목+부제)가 화면 너비와 상관없이 항상 온전히 보이도록,
      고정 높이(px) 대신 이미지 비율(aspect-ratio)로 크롭 비율을 고정합니다. */
-  .herobanner{ position:relative; width:100%; overflow:hidden; line-height:0; aspect-ratio: 941 / 300; }
+  /* 좌우 여백을 살짝 두어 페이지 본문(.shell)과 폭을 맞추고, 비율은 그대로 유지되므로
+     너비가 줄어든 만큼 높이도 자연스럽게 함께 살짝 줄어듭니다. */
+  .herobanner-wrap{ max-width:1180px; margin:0 auto; padding: 0 clamp(16px,4vw,40px); }
+  .herobanner{ position:relative; width:100%; overflow:hidden; line-height:0; aspect-ratio: 941 / 300; border-radius: var(--radius-l); }
   .herobanner-img{ width:100%; height:100%; object-fit:cover; object-position:top; display:block; }
 
   /* 히어로 배너 4분할 광고 */
@@ -853,18 +856,20 @@
   </div>
 </div>
 
-<div class="herobanner">
-  <img src="/images/hero-pulsescore.png" alt="PULSE SCORE" class="herobanner-img">
-  <div class="herobanner-grid" id="herobannergrid">
-    <div class="herobanner-quad" data-hero-slot="0"></div>
-    <div class="herobanner-quad" data-hero-slot="1"></div>
-    <div class="herobanner-quad" data-hero-slot="2"></div>
-    <div class="herobanner-quad" data-hero-slot="3"></div>
+<div class="herobanner-wrap">
+  <div class="herobanner">
+    <img src="/images/hero-pulsescore.png" alt="PULSE SCORE" class="herobanner-img">
+    <div class="herobanner-grid" id="herobannergrid">
+      <div class="herobanner-quad" data-hero-slot="0"></div>
+      <div class="herobanner-quad" data-hero-slot="1"></div>
+      <div class="herobanner-quad" data-hero-slot="2"></div>
+      <div class="herobanner-quad" data-hero-slot="3"></div>
+    </div>
+    <button class="herobanner-toggle adminonly-btn" id="herobannertoggle">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      광고 배너 관리
+    </button>
   </div>
-  <button class="herobanner-toggle adminonly-btn" id="herobannertoggle">
-    <svg viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-    광고 배너 관리
-  </button>
 </div>
 
 <div class="shell">
