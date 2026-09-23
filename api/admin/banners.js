@@ -1,8 +1,10 @@
 // api/admin/banners.js
 //
-// 관리자가 상단 배너(SUPER BANNER) 이미지를 등록/교체/삭제하는 API입니다.
-//   PUT /api/admin/banners   body: { slot: 0~9, image: "data:image/..." 또는 null }
-// (배너 10칸 = 위/아래 2줄 × 5칸)
+// 관리자가 배너 이미지를 등록/교체/삭제하는 API입니다.
+//   PUT /api/admin/banners   body: { slot: 0~13, image: "data:image/..." 또는 null }
+// 슬롯 구성:
+//   0~9  : 상단 SUPER BANNER (위/아래 2줄 × 5칸)
+//   10~13: 히어로 배너(맨 위 메인 이미지) 4분할 광고
 //
 // 일반 회원 계정은 배너를 쓸 수 없습니다(Supabase 쪽에 배너용 insert/update
 // 정책을 아예 만들지 않았습니다). 이 서버(API)의 service_role 키를 통해서만
@@ -33,8 +35,8 @@ module.exports = async function handler(req, res) {
     try {
       const body = req.body || {};
       const slot = Number(body.slot);
-      if (!Number.isInteger(slot) || slot < 0 || slot > 9) {
-        res.status(400).json({ error: "slot은 0~9 사이의 정수여야 합니다." });
+      if (!Number.isInteger(slot) || slot < 0 || slot > 13) {
+        res.status(400).json({ error: "slot은 0~13 사이의 정수여야 합니다." });
         return;
       }
       const image = typeof body.image === "string" && body.image ? body.image : null;
