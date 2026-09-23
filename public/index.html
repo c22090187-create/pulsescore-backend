@@ -144,8 +144,19 @@
   /* ---------- hero banner ---------- */
   /* 이미지 속 문구(제목+부제)가 화면 너비와 상관없이 항상 온전히 보이도록,
      고정 높이(px) 대신 이미지 비율(aspect-ratio)로 크롭 비율을 고정합니다. */
-  .herobanner{ width:100%; overflow:hidden; line-height:0; aspect-ratio: 941 / 300; }
+  .herobanner{ position:relative; width:100%; overflow:hidden; line-height:0; aspect-ratio: 941 / 300; }
   .herobanner-img{ width:100%; height:100%; object-fit:cover; object-position:top; display:block; }
+
+  /* 히어로 배너 4분할 광고 (관리자가 등록 전까지는 원래 이미지가 그대로 보입니다) */
+  .herobanner-grid{ position:absolute; inset:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+  .herobanner-quad img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .herobanner-toggle{
+    position:absolute; top:12px; right:12px; z-index:5;
+    border:1px solid rgba(255,255,255,0.35); background: rgba(6,15,12,0.55); color:#fff; font-size:12.5px; font-weight:700;
+    padding:6px 12px; border-radius:999px; align-items:center; gap:6px; backdrop-filter: blur(3px);
+  }
+  .herobanner-toggle svg{ width:13px; height:13px; }
+  .herobanner-toggle:hover{ border-color:#fff; }
 
   /* ---------- shell ---------- */
   .shell{ max-width: 1180px; margin: 0 auto; padding: 26px clamp(16px,4vw,40px) 90px; }
@@ -831,9 +842,29 @@
 
 <div class="herobanner">
   <img src="/images/hero-pulsescore.png" alt="PULSE SCORE" class="herobanner-img">
+  <div class="herobanner-grid" id="herobannergrid">
+    <div class="herobanner-quad" data-hero-slot="0"></div>
+    <div class="herobanner-quad" data-hero-slot="1"></div>
+    <div class="herobanner-quad" data-hero-slot="2"></div>
+    <div class="herobanner-quad" data-hero-slot="3"></div>
+  </div>
+  <button class="herobanner-toggle adminonly-btn" id="herobannertoggle">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    광고 배너 관리
+  </button>
 </div>
 
 <div class="shell">
+
+  <!-- 히어로 배너(상단 메인 이미지) 4분할 광고 관리 패널: 관리자 로그인 시에만 열 수 있습니다 -->
+  <div class="banneradmin" id="herobanneradmin">
+    <div class="banneradmin-head">
+      <span class="label">히어로 배너 4분할 · 각 칸 권장 800×256px (약 3.1:1 비율) JPG 또는 PNG</span>
+    </div>
+    <div class="bannergrid" id="herobannergridadmin"></div>
+    <button class="bannerregisterbtn" id="herobannerregister">등록 완료</button>
+    <div class="bannerreadystatus" id="herobannerreadystatus"></div>
+  </div>
 
   <!-- SUPER BANNER: 어떤 카테고리(탭)를 눌러도 항상 보이도록 페이지 전환 영역 바깥에 고정 배치 -->
   <div class="bannersection">
@@ -1742,6 +1773,7 @@
   }
   function applyAdminUI(){
     document.getElementById("bannertoggle").classList.toggle("show-admin", isAdmin);
+    document.getElementById("herobannertoggle").classList.toggle("show-admin", isAdmin);
     document.getElementById("paidad-writebtn").classList.toggle("show-admin", isAdmin);
     document.getElementById("more-membersbtn").classList.toggle("show-admin", isAdmin);
     document.getElementById("more-statsbtn").classList.toggle("show-admin", isAdmin);
@@ -1750,6 +1782,7 @@
     document.getElementById("more-adminlogoutbtn").classList.toggle("show-admin", isAdmin);
     if(!isAdmin){
       document.getElementById("banneradmin").classList.remove("show");
+      document.getElementById("herobanneradmin").classList.remove("show");
     }
     // 상단 "회원 로그인" 버튼에 관리자 모드 여부를 함께 표시합니다.
     applyMemberUI();
@@ -1768,6 +1801,12 @@
   ];
   let banners = new Array(BANNER_SLOTS).fill(null);
 
+  // 히어로 배너(상단 메인 이미지) 4분할 광고도 같은 banners 테이블을 재사용합니다.
+  // 0~9번은 SUPER BANNER, 10~13번은 히어로 배너 4칸입니다.
+  const HERO_SLOTS = 4;
+  const HERO_SLOT_OFFSET = 10;
+  let heroBanners = new Array(HERO_SLOTS).fill(null);
+
   async function fetchBanners(){
     if(!window.psSupabase) return;
     try{
@@ -1777,12 +1816,17 @@
         .order("slot", { ascending: true });
       if(error) throw error;
       const next = new Array(BANNER_SLOTS).fill(null);
+      const nextHero = new Array(HERO_SLOTS).fill(null);
       (data || []).forEach((row) => {
         if(row.slot >= 0 && row.slot < BANNER_SLOTS) next[row.slot] = row.image || null;
+        else if(row.slot >= HERO_SLOT_OFFSET && row.slot < HERO_SLOT_OFFSET + HERO_SLOTS) nextHero[row.slot - HERO_SLOT_OFFSET] = row.image || null;
       });
       banners = next;
+      heroBanners = nextHero;
       renderBannerCarousel();
+      renderHeroBanner();
       if(document.getElementById("banneradmin").classList.contains("show")) renderBannerAdmin();
+      if(document.getElementById("herobanneradmin").classList.contains("show")) renderHeroBannerAdmin();
     }catch(err){
       console.warn("[PulseScore] 배너 불러오기 실패:", err);
     }
@@ -1906,6 +1950,87 @@
 
   renderBannerCarousel();
   resetBannerTimer();
+
+  // ---------- 히어로 배너 4분할 (Supabase에 실제 저장, 관리자만 수정 가능) ----------
+  function renderHeroBanner(){
+    document.querySelectorAll("#herobannergrid .herobanner-quad").forEach((quad) => {
+      const idx = Number(quad.getAttribute("data-hero-slot"));
+      const img = heroBanners[idx];
+      quad.innerHTML = img ? `<img src="${img}" alt="배너 ${idx+1}">` : "";
+    });
+  }
+
+  function renderHeroBannerAdmin(){
+    const grid = document.getElementById("herobannergridadmin");
+    grid.innerHTML = heroBanners.map((b,i) => `
+      <div class="bannerslot ${b ? 'filled':''}" data-slot="${i}">
+        ${b ? `<img src="${b}" alt="배너 ${i+1}">` : `<div class="placeholder"><b>배너 ${i+1}</b><span>권장 800×256px</span></div>`}
+        <button class="removebtn" data-remove="${i}">✕</button>
+        <input type="file" accept="image/png,image/jpeg" data-fileslot="${i}">
+      </div>
+    `).join("");
+    grid.querySelectorAll(".bannerslot").forEach(slot => {
+      slot.addEventListener("click", (e) => {
+        if(e.target.closest(".removebtn")) return;
+        slot.querySelector("input[type=file]").click();
+      });
+    });
+    grid.querySelectorAll("input[type=file]").forEach(inp => {
+      inp.addEventListener("change", (e) => {
+        const idx = Number(inp.getAttribute("data-fileslot"));
+        const file = e.target.files[0];
+        if(!file) return;
+        const MAX_BYTES = 2 * 1024 * 1024;
+        if(file.size > MAX_BYTES){
+          showToast("사진 용량은 최대 2MB까지 첨부할 수 있습니다");
+          e.target.value = "";
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => { heroBanners[idx] = reader.result; renderHeroBannerAdmin(); updateHeroBannerReadyStatus(); };
+        reader.readAsDataURL(file);
+      });
+    });
+    grid.querySelectorAll("[data-remove]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        heroBanners[Number(btn.getAttribute("data-remove"))] = null;
+        renderHeroBannerAdmin(); updateHeroBannerReadyStatus();
+      });
+    });
+    updateHeroBannerReadyStatus();
+  }
+  function updateHeroBannerReadyStatus(){
+    const n = heroBanners.filter(Boolean).length;
+    document.getElementById("herobannerreadystatus").textContent = `${n}개 배너 준비됨`;
+  }
+
+  document.getElementById("herobannertoggle").addEventListener("click", () => {
+    const panel = document.getElementById("herobanneradmin");
+    panel.classList.toggle("show");
+    if(panel.classList.contains("show")) renderHeroBannerAdmin();
+  });
+  document.getElementById("herobannerregister").addEventListener("click", async () => {
+    const btn = document.getElementById("herobannerregister");
+    btn.disabled = true;
+    try{
+      for(let i = 0; i < HERO_SLOTS; i++){
+        await adminFetch("/api/admin/banners", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slot: HERO_SLOT_OFFSET + i, image: heroBanners[i] || null }),
+        });
+      }
+      renderHeroBanner();
+      showToast("히어로 배너가 등록되었습니다");
+    }catch(err){
+      showToast(err.message || "히어로 배너 등록에 실패했습니다");
+    }finally{
+      btn.disabled = false;
+    }
+  });
+
+  renderHeroBanner();
 
   let searchQuery = "";
   let leaguepickExpanded = false;
