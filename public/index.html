@@ -148,8 +148,12 @@
   .herobanner-img{ width:100%; height:100%; object-fit:cover; object-position:top; display:block; }
 
   /* 히어로 배너 4분할 광고 (관리자가 등록 전까지는 원래 이미지가 그대로 보입니다) */
-  .herobanner-grid{ position:absolute; inset:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+  /* 칸 사이에 살짝 틈을 둬서(gap), 광고가 등록되면 4칸이 서로 분리된 느낌으로 보입니다.
+     아직 등록 전(빈 칸)일 때는 틈으로도 같은 배경 이미지가 그대로 비쳐서 표시가 안 납니다. */
+  .herobanner-grid{ position:absolute; inset:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:6px; }
+  .herobanner-quad{ overflow:hidden; border-radius:6px; }
   .herobanner-quad img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .herobanner-quad.filled{ box-shadow: 0 0 0 1px rgba(255,255,255,0.14), 0 2px 10px rgba(0,0,0,0.25); }
   .herobanner-toggle{
     position:absolute; top:12px; right:12px; z-index:5;
     border:1px solid rgba(255,255,255,0.35); background: rgba(6,15,12,0.55); color:#fff; font-size:12.5px; font-weight:700;
@@ -1956,6 +1960,7 @@
     document.querySelectorAll("#herobannergrid .herobanner-quad").forEach((quad) => {
       const idx = Number(quad.getAttribute("data-hero-slot"));
       const img = heroBanners[idx];
+      quad.classList.toggle("filled", !!img);
       quad.innerHTML = img ? `<img src="${img}" alt="배너 ${idx+1}">` : "";
     });
   }
