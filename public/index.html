@@ -261,9 +261,9 @@
   @media (max-width:640px){ .bannercarousel{ aspect-ratio: 16/3.5; } }
   .bannerslide{
     position:absolute; inset:0; overflow:hidden;
-    opacity:0; transition: opacity .5s ease;
+    opacity:0; transition: opacity .5s ease; pointer-events:none;
   }
-  .bannerslide.show{ opacity:1; }
+  .bannerslide.show{ opacity:1; pointer-events:auto; }
   .bannerslide.fallbackslide{
     display:flex; align-items:center; justify-content:center; text-align:center; padding:20px;
     background-size: cover; background-position:center;
