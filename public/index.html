@@ -389,6 +389,17 @@
     overflow-y:auto;
   }
   .modal-overlay.show{ display:flex; }
+  .lightbox-overlay{ z-index:200; background: rgba(8,8,8,0.88); padding:16px; cursor:zoom-out; }
+  .lightbox-overlay img{
+    max-width:95vw; max-height:95vh; width:auto; height:auto; object-fit:contain;
+    border-radius:10px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); cursor:default; margin:auto;
+  }
+  .lightbox-close{
+    position:fixed; top: calc(16px + env(safe-area-inset-top,0px)); right:16px; z-index:201;
+    background: rgba(17,17,17,0.6); color:#fff; width:38px; height:38px;
+  }
+  .lightbox-close:hover{ background: rgba(17,17,17,0.85); }
+  .zoomable-photo{ cursor: zoom-in; }
   .videomodal{
     width:100%; max-width: 720px; background: var(--panel); border:1px solid var(--line);
     border-radius: var(--radius-l); overflow:hidden; margin:auto;
@@ -1377,6 +1388,13 @@
   </div>
 </div>
 
+<div class="modal-overlay lightbox-overlay" id="imglightbox">
+  <button class="modal-close lightbox-close" id="imglightbox-close" aria-label="닫기">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  <img id="imglightbox-img" src="" alt="사진 원본 보기">
+</div>
+
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="toast-text">저장되었습니다</span></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1854,6 +1872,7 @@
       el.querySelectorAll("[data-dot]").forEach(d => {
         d.addEventListener("click", () => { bannerIdx[r] = Number(d.getAttribute("data-dot")); renderBannerCarousel(); resetBannerTimer(); });
       });
+      el.querySelectorAll(".bannerslide-img").forEach(img => makeZoomable(img));
     });
   }
   function resetBannerTimer(){
@@ -1949,6 +1968,7 @@
       quad.classList.toggle("filled", !!img);
       if(img){
         quad.innerHTML = `<img src="${img}" alt="배너 ${idx+1}">`;
+        makeZoomable(quad.querySelector("img"), img);
       } else {
         // 아직 등록되지 않은 칸은 SUPER BANNER의 안내 카드와 같은 스타일로 보여줍니다.
         const fb = BANNER_FALLBACKS[idx % BANNER_FALLBACKS.length];
@@ -2490,6 +2510,32 @@
     showToast._tm = setTimeout(() => t.classList.remove("show"), 2200);
   }
 
+  // ===================== 사진 이미지 클릭 시 원본 크기로 보기 =====================
+  function openImageLightbox(src){
+    if(!src) return;
+    document.getElementById("imglightbox-img").src = src;
+    document.getElementById("imglightbox").classList.add("show");
+  }
+  function closeImageLightbox(){
+    document.getElementById("imglightbox").classList.remove("show");
+    document.getElementById("imglightbox-img").src = "";
+  }
+  document.getElementById("imglightbox-close").addEventListener("click", closeImageLightbox);
+  document.getElementById("imglightbox").addEventListener("click", (e) => {
+    if(e.target.id === "imglightbox") closeImageLightbox();
+  });
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && document.getElementById("imglightbox").classList.contains("show")) closeImageLightbox();
+  });
+  // 사진 이미지에 이 함수를 걸어두면 클릭 시 원본 크기로 확대해서 볼 수 있습니다.
+  function makeZoomable(img, src){
+    img.classList.add("zoomable-photo");
+    img.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openImageLightbox(src || img.src);
+    });
+  }
+
   async function savePrediction(match, p){
     if(match.status === "진행중"){ showToast("이미 시작된 경기는 예측을 저장할 수 없어요"); return; }
     const hasAny = GROUP_ORDER.some(g => p[g]);
@@ -2752,6 +2798,7 @@
     if(bodySlot){
       bodySlot.innerHTML = opts.bodyHtml || "";
       bodySlot.style.display = opts.bodyHtml ? "block" : "none";
+      bodySlot.querySelectorAll("img").forEach(img => makeZoomable(img));
     }
 
     currentFavoriteId = opts.favoriteId || null;
@@ -3191,6 +3238,7 @@
         openWriteModal(bId, post);
       });
     });
+    el.querySelectorAll(".boardpost img").forEach(img => makeZoomable(img));
     if(imageOnly){
       const prevBtn = document.getElementById("board-prevpage");
       const nextBtn = document.getElementById("board-nextpage");
@@ -3253,6 +3301,7 @@
   document.querySelectorAll(".writebtn[data-board]").forEach(btn => {
     btn.addEventListener("click", () => openWriteModal(btn.getAttribute("data-board")));
   });
+  makeZoomable(document.getElementById("write-photo-preview"));
   document.getElementById("write-photo-input").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if(!file) return;
